@@ -1,0 +1,86 @@
+# .dockerignore for nerf-edge-kit
+# Exclude unnecessary files from Docker build context
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+python/venv
+python/.venv
+
+# Build artifacts
+dist
+build
+coverage
+.pytest_cache
+.cache
+*.egg-info
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# Documentation build
+docs/_build
+docs/.doctrees
+
+# Testing
+.coverage
+htmlcov
+.tox
+.nox
+
+# Large model files (should be downloaded at runtime)
+*.nerf
+*.ckpt
+*.pth
+models/
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Package files
+*.tar.gz
+*.zip
+
+# iOS specific
+ios/build
+ios/DerivedData
+*.xcworkspace
+*.xcuserdata
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
