@@ -4,15 +4,22 @@
 
 ### SLSA (Supply Chain Levels for Software Artifacts)
 
-**Current Level**: Level 1 (Basic)
+**Current Level**: Level 2 (Enhanced)
 **Target Level**: Level 3 (Hardened)
 
-**Requirements**:
+#### Level 2 Requirements ✅
 - [x] Source code version controlled
-- [x] Build process documented
-- [ ] Build service generates provenance
-- [ ] Source and build platforms hardened
-- [ ] Dependencies tracked and verified
+- [x] Build process documented and reproducible
+- [x] Build service generates provenance
+- [x] Authenticated and authorized build triggers
+- [x] Service-generated build provenance
+- [x] Build/source platform meets baseline requirements
+
+#### Level 3 Requirements (In Progress)
+- [ ] Hermetic builds (isolated build environments)
+- [ ] Non-falsifiable provenance
+- [ ] Two-person review for all changes
+- [ ] Tamper-resistant build platform
 
 ### SBOM (Software Bill of Materials)
 

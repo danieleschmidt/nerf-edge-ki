@@ -1,0 +1,21 @@
+# Global code owners
+* @danieleschmidt @terragon-labs/core-team
+
+# Platform-specific ownership
+/ios/ @terragon-labs/ios-team
+/web/ @terragon-labs/web-team  
+/python/ @terragon-labs/ml-team
+
+# Documentation
+/docs/ @terragon-labs/docs-team
+README.md @danieleschmidt @terragon-labs/core-team
+
+# Configuration and infrastructure
+/.github/ @terragon-labs/devops-team
+/docker* @terragon-labs/devops-team
+/nginx.conf @terragon-labs/devops-team
+
+# Security-critical files
+/SECURITY.md @terragon-labs/security-team
+/.secrets.baseline @terragon-labs/security-team
+/.pre-commit-config.yaml @terragon-labs/security-team

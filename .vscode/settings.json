@@ -1,0 +1,135 @@
+{
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  
+  "eslint.workingDirectories": ["web", "tools"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--line-length", "88"],
+  
+  "files.associations": {
+    "*.nerf": "json",
+    "*.ply": "plaintext",
+    "*.metal": "cpp"
+  },
+  
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.DS_Store": true,
+    "**/coverage": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/build": true,
+    "**/.pytest_cache": true,
+    "**/DerivedData": true
+  },
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/__pycache__": true,
+    "**/build": true,
+    "**/DerivedData": true,
+    "**/*.log": true
+  },
+  
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  
+  "editor.rulers": [80, 120],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true,
+  
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.rulers": [88]
+  },
+  
+  "[swift]": {
+    "editor.tabSize": 4
+  },
+  
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.rulers": []
+  },
+  
+  "git.ignoreLimitWarning": true,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.profiles.osx": {
+    "zsh": {
+      "path": "/bin/zsh",
+      "args": ["-l"]
+    }
+  },
+  
+  "extensions.recommendations": [
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "ms-python.mypy-type-checker",
+    "ms-toolsai.jupyter",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.swift-lang",
+    "sswg.swift-lang",
+    "ms-vscode.cmake-tools",
+    "twxs.cmake",
+    "ms-vscode.cpptools",
+    "github.copilot",
+    "github.copilot-chat",
+    "github.vscode-pull-request-github",
+    "ms-vsliveshare.vsliveshare",
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-json"
+  ],
+  
+  "testing.automaticallyOpenPeekView": "never",
+  "jest.runMode": "on-demand",
+  "jest.autoRun": "off",
+  
+  "emmet.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascriptreact"
+  },
+  
+  "debug.console.fontSize": 12,
+  "debug.console.wordWrap": false,
+  
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#1e1e1e",
+    "statusBar.background": "#0078d4",
+    "statusBar.foreground": "#ffffff"
+  },
+  
+  "workbench.settings.editor": "json",
+  "workbench.iconTheme": "vs-seti",
+  
+  "problems.decorations.enabled": true,
+  
+  "notebook.cellToolbarLocation": {
+    "default": "right",
+    "jupyter-notebook": "left"
+  }
+}

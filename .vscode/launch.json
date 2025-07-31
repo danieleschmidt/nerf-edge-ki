@@ -1,0 +1,134 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Web: Launch Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/web",
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/web/*",
+        "webpack:///src/*": "${workspaceFolder}/web/src/*"
+      },
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug",
+      "runtimeArgs": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=Vulkan"
+      ]
+    },
+    {
+      "name": "Web: Attach to Chrome",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/web",
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/web/*"
+      }
+    },
+    {
+      "name": "Node: Debug Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": [
+        "--runInBand",
+        "--no-cache",
+        "--config",
+        "jest.config.js"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "NODE_ENV": "test"
+      }
+    },
+    {
+      "name": "Python: Debug Training Script",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/python/scripts/train_nerf.py",
+      "args": [
+        "--config",
+        "configs/lego.json",
+        "--debug"
+      ],
+      "cwd": "${workspaceFolder}/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/python",
+        "CUDA_VISIBLE_DEVICES": "0"
+      }
+    },
+    {
+      "name": "Python: Debug Tests",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${workspaceFolder}/python/tests",
+        "-v",
+        "--tb=short"
+      ],
+      "cwd": "${workspaceFolder}/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/python"
+      }
+    },
+    {
+      "name": "Python: Debug Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/python"
+      }
+    },
+    {
+      "name": "Docker: Debug Web Container",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "address": "localhost",
+      "localRoot": "${workspaceFolder}/web",
+      "remoteRoot": "/app/web",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Performance: Profile Rendering",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000?profile=true",
+      "webRoot": "${workspaceFolder}/web",
+      "runtimeArgs": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=Vulkan",
+        "--enable-gpu-rasterization",
+        "--enable-zero-copy",
+        "--enable-features=VaapiVideoDecoder"
+      ],
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-profile"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Debug",
+      "configurations": [
+        "Web: Launch Chrome",
+        "Python: Debug Training Script"
+      ]
+    }
+  ]
+}

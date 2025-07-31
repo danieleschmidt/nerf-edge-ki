@@ -1,0 +1,91 @@
+# Dependabot configuration for automated dependency updates
+version: 2
+
+updates:
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "terragon-labs/security-team"
+    assignees:
+      - "danieleschmidt"
+    commit-message:
+      prefix: "npm"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+    # Security updates should be immediate
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Group minor and patch updates
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/python"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "terragon-labs/ml-team"
+    assignees:
+      - "danieleschmidt"
+    commit-message:
+      prefix: "pip"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "terragon-labs/devops-team"
+    assignees:
+      - "danieleschmidt"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "terragon-labs/devops-team"
+    commit-message:
+      prefix: "docker"
+    labels:
+      - "dependencies"
+      - "docker"
