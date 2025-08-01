@@ -1,0 +1,31 @@
+{
+  "lastUpdated": "2025-08-01T11:58:36.782Z",
+  "totalExecutions": 1,
+  "successRate": 1,
+  "executions": [
+    {
+      "timestamp": "2025-08-01T11:58:36.782Z",
+      "itemId": "missing-main-file",
+      "title": "Create main entry point file",
+      "type": "implementation",
+      "scores": {
+        "wsjf": 4.166666666666667,
+        "ice": 450,
+        "technicalDebt": 10,
+        "composite": 49.5
+      },
+      "estimatedEffort": 6,
+      "actualEffort": null,
+      "result": {
+        "type": "implementation",
+        "action": "main-entry-created",
+        "files": [
+          "src/index.ts",
+          "src/core/types.ts"
+        ],
+        "impact": "Created TypeScript SDK entry point with type definitions"
+      },
+      "status": "success"
+    }
+  ]
+}

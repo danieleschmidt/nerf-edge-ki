@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2025-08-01T12:00:07.069Z",
+  "totalItems": 1,
+  "metrics": {
+    "totalItemsDiscovered": 1,
+    "totalItemsCompleted": 0,
+    "averageCycleTime": 0,
+    "valueDelivered": 0
+  },
+  "items": [
+    {
+      "id": "missing-main-file",
+      "title": "Create main entry point file",
+      "type": "implementation",
+      "source": "static-analysis",
+      "description": "Missing main entry point: dist/index.js",
+      "effort": 6,
+      "impact": 10,
+      "confidence": 9,
+      "userValue": 9,
+      "timeCriticality": 8,
+      "scores": {
+        "wsjf": 4.166666666666667,
+        "ice": 450,
+        "technicalDebt": 10,
+        "composite": 49.5
+      }
+    }
+  ]
+}
