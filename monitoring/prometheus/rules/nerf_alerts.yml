@@ -1,0 +1,216 @@
+# NeRF Edge Kit Alerting Rules
+groups:
+  - name: nerf-edge-kit.critical
+    interval: 30s
+    rules:
+      # Critical: Service is down
+      - alert: NerfServiceDown
+        expr: up{job=~"nerf-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "NeRF service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 1 minute."
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/service-down"
+
+      # Critical: High error rate
+      - alert: NerfHighErrorRate
+        expr: |
+          (
+            rate(nerf_http_requests_total{status=~"5.."}[5m]) /
+            rate(nerf_http_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }}"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/high-error-rate"
+
+      # Critical: Out of memory
+      - alert: NerfOutOfMemory
+        expr: |
+          (
+            node_memory_MemAvailable_bytes / 
+            node_memory_MemTotal_bytes
+          ) < 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host is running out of memory"
+          description: "Available memory is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/out-of-memory"
+
+      # Critical: GPU memory exhaustion
+      - alert: NerfGPUMemoryHigh
+        expr: |
+          (
+            DCGM_FI_DEV_MEM_COPY_UTIL / 100
+          ) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GPU memory usage is critically high"
+          description: "GPU memory utilization is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/gpu-memory-high"
+
+  - name: nerf-edge-kit.warning
+    interval: 60s
+    rules:
+      # Warning: Performance degradation
+      - alert: NerfPerformanceDegraded
+        expr: |
+          histogram_quantile(0.95, 
+            rate(nerf_render_duration_seconds_bucket[5m])
+          ) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: "rendering"
+        annotations:
+          summary: "NeRF rendering performance degraded"
+          description: "95th percentile render time is {{ $value }}s"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/performance-degraded"
+
+      # Warning: High CPU usage
+      - alert: NerfHighCPUUsage
+        expr: |
+          100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/high-cpu"
+
+      # Warning: Low frame rate
+      - alert: NerfLowFrameRate
+        expr: |
+          avg_over_time(nerf_fps[5m]) < 45
+        for: 3m
+        labels:
+          severity: warning
+          service: "rendering"
+        annotations:
+          summary: "Frame rate below target"
+          description: "Average FPS is {{ $value }} (target: 60+)"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/low-framerate"
+
+      # Warning: High memory usage
+      - alert: NerfHighMemoryUsage
+        expr: |
+          (
+            node_memory_MemAvailable_bytes / 
+            node_memory_MemTotal_bytes
+          ) < 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Available memory is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          runbook_url: "https://docs.nerf-edge-kit.dev/runbooks/high-memory"
+
+  - name: nerf-edge-kit.performance
+    interval: 30s
+    rules:
+      # Recording rule: Request rate
+      - record: nerf:request_rate
+        expr: |
+          sum(rate(nerf_http_requests_total[1m])) by (job, method, status)
+
+      # Recording rule: Error rate
+      - record: nerf:error_rate
+        expr: |
+          sum(rate(nerf_http_requests_total{status=~"5.."}[1m])) by (job) /
+          sum(rate(nerf_http_requests_total[1m])) by (job)
+
+      # Recording rule: Average response time
+      - record: nerf:response_time_avg
+        expr: |
+          histogram_quantile(0.5, 
+            sum(rate(nerf_http_request_duration_seconds_bucket[1m])) by (job, le)
+          )
+
+      # Recording rule: 95th percentile response time
+      - record: nerf:response_time_p95
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(nerf_http_request_duration_seconds_bucket[1m])) by (job, le)
+          )
+
+      # Recording rule: GPU utilization
+      - record: nerf:gpu_utilization
+        expr: |
+          avg(DCGM_FI_DEV_GPU_UTIL) by (instance, gpu)
+
+      # Recording rule: Memory utilization
+      - record: nerf:memory_utilization
+        expr: |
+          1 - (
+            node_memory_MemAvailable_bytes / 
+            node_memory_MemTotal_bytes
+          )
+
+  - name: nerf-edge-kit.business
+    interval: 300s
+    rules:
+      # Business metric: Active sessions
+      - record: nerf:active_sessions
+        expr: |
+          sum(nerf_active_sessions) by (platform)
+
+      # Business metric: Model loading success rate
+      - record: nerf:model_load_success_rate
+        expr: |
+          sum(rate(nerf_model_loads_total{status="success"}[5m])) /
+          sum(rate(nerf_model_loads_total[5m]))
+
+      # Business metric: Rendering quality score
+      - record: nerf:rendering_quality_score
+        expr: |
+          avg(nerf_quality_score) by (platform, quality_preset)
+
+  - name: nerf-edge-kit.sli
+    interval: 60s
+    rules:
+      # SLI: Availability (uptime)
+      - record: nerf:sli_availability
+        expr: |
+          avg_over_time(up{job=~"nerf-.*"}[5m])
+
+      # SLI: Latency (95th percentile < 20ms)
+      - record: nerf:sli_latency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(nerf_render_duration_seconds_bucket[5m])) by (le)
+          ) < 0.02
+
+      # SLI: Error rate (< 1%)
+      - record: nerf:sli_error_rate
+        expr: |
+          (
+            sum(rate(nerf_http_requests_total{status=~"5.."}[5m])) /
+            sum(rate(nerf_http_requests_total[5m]))
+          ) < 0.01
+
+      # SLI: Throughput (requests per second)
+      - record: nerf:sli_throughput
+        expr: |
+          sum(rate(nerf_http_requests_total[5m]))
+
+      # SLO: Composite score
+      - record: nerf:slo_score
+        expr: |
+          (
+            nerf:sli_availability +
+            bool(nerf:sli_latency) +
+            bool(nerf:sli_error_rate)
+          ) / 3
