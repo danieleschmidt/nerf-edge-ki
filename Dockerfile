@@ -2,7 +2,7 @@
 # Supports both web development and Python training components
 
 # Stage 1: Base development environment
-FROM node:18-alpine AS base
+FROM node:24-alpine AS base
 
 # Security labels
 LABEL org.opencontainers.image.title="nerf-edge-kit"
