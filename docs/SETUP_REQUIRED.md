@@ -4,11 +4,28 @@ This document lists the manual setup steps that need to be performed by reposito
 
 ## GitHub Workflows
 
-The following workflow files need to be manually created in `.github/workflows/`:
+⚠️ **CRITICAL**: Due to GitHub App permission limitations, the workflow files have been created locally but cannot be pushed. Repository maintainers must manually handle this final step.
 
-### 1. Copy Workflow Templates
+### 1. Workflow Files Created (Ready for Manual Push)
 
-Copy the following files from `docs/workflows/examples/` to `.github/workflows/`:
+The following workflow files have been created and are ready for manual deployment:
+- `.github/workflows/ci.yml` - Complete CI pipeline with multi-platform testing
+- `.github/workflows/release.yml` - Automated release pipeline with semantic versioning
+
+### 2. Manual Deployment Steps
+
+Repository maintainers with proper permissions should:
+
+```bash
+# The files are already created locally, just need to be pushed by a user with workflows permission
+git add .github/workflows/
+git commit -m "feat: add complete GitHub Actions CI/CD workflows"
+git push origin terragon/implement-checkpointed-sdlc
+```
+
+### 3. Alternative: Copy from Templates
+
+If the above doesn't work, copy from templates:
 
 ```bash
 cp docs/workflows/examples/ci.yml .github/workflows/
