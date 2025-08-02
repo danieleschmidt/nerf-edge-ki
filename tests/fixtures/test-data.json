@@ -1,0 +1,163 @@
+{
+  "models": {
+    "simple_cube": {
+      "name": "Simple Cube",
+      "description": "Basic cube model for unit testing",
+      "bounds": {
+        "min": [-1, -1, -1],
+        "max": [1, 1, 1]
+      },
+      "vertices": [
+        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+      ],
+      "indices": [
+        0, 1, 2, 2, 3, 0,
+        4, 5, 6, 6, 7, 4,
+        0, 1, 5, 5, 4, 0,
+        2, 3, 7, 7, 6, 2,
+        0, 3, 7, 7, 4, 0,
+        1, 2, 6, 6, 5, 1
+      ],
+      "networkData": {
+        "size": 1024,
+        "format": "instant_ngp",
+        "parameters": {
+          "hashmap_size": 16384,
+          "feature_dim": 2
+        }
+      }
+    },
+    "room_scene": {
+      "name": "Room Scene",
+      "description": "Realistic room scene for integration testing",
+      "bounds": {
+        "min": [-3, -2, -3],
+        "max": [3, 2.5, 3]
+      },
+      "complexity": "medium",
+      "networkData": {
+        "size": 8192,
+        "format": "instant_ngp",
+        "parameters": {
+          "hashmap_size": 262144,
+          "feature_dim": 4,
+          "max_resolution": 1024
+        }
+      },
+      "cameras": [
+        {
+          "position": [0, 0, 2],
+          "target": [0, 0, 0],
+          "up": [0, 1, 0],
+          "fov": 1.0472
+        },
+        {
+          "position": [2, 1, 2],
+          "target": [0, 0, 0],
+          "up": [0, 1, 0],
+          "fov": 1.0472
+        }
+      ]
+    }
+  },
+  "performance_baselines": {
+    "vision_pro": {
+      "target_fps": 90,
+      "max_latency_ms": 4.2,
+      "max_power_w": 8,
+      "resolution": [4096, 4096],
+      "expected_frame_time_ms": 11.1
+    },
+    "iphone_15_pro": {
+      "target_fps": 60,
+      "max_latency_ms": 4.8,
+      "max_power_w": 3,
+      "resolution": [1920, 1080],
+      "expected_frame_time_ms": 16.7
+    },
+    "web_chrome": {
+      "target_fps": 60,
+      "max_latency_ms": 6.5,
+      "resolution": [2560, 1440],
+      "expected_frame_time_ms": 16.7,
+      "webgpu_required": true
+    }
+  },
+  "test_configurations": {
+    "unit_test": {
+      "batch_size": 64,
+      "num_samples": 32,
+      "timeout_ms": 1000,
+      "max_memory_mb": 100
+    },
+    "integration_test": {
+      "batch_size": 512,
+      "num_samples": 128,
+      "timeout_ms": 5000,
+      "max_memory_mb": 500
+    },
+    "performance_test": {
+      "batch_size": 4096,
+      "num_samples": 256,
+      "timeout_ms": 30000,
+      "max_memory_mb": 2048,
+      "warmup_iterations": 10,
+      "benchmark_iterations": 100
+    }
+  },
+  "webgpu_capabilities": {
+    "required_features": [
+      "depth-clip-control",
+      "texture-compression-bc"
+    ],
+    "optional_features": [
+      "timestamp-query",
+      "pipeline-statistics-query"
+    ],
+    "limits": {
+      "maxTextureDimension2D": 8192,
+      "maxBufferSize": 268435456,
+      "maxComputeWorkgroupStorageSize": 16384
+    }
+  },
+  "foveation_patterns": {
+    "uniform": {
+      "center": [0.5, 0.5],
+      "levels": [
+        {"radius": 0.1, "quality": 1.0},
+        {"radius": 0.3, "quality": 0.75},
+        {"radius": 0.6, "quality": 0.5},
+        {"radius": 1.0, "quality": 0.25}
+      ]
+    },
+    "eye_tracking": {
+      "center": [0.6, 0.4],
+      "levels": [
+        {"radius": 0.05, "quality": 1.0},
+        {"radius": 0.15, "quality": 0.9},
+        {"radius": 0.4, "quality": 0.6},
+        {"radius": 1.0, "quality": 0.3}
+      ],
+      "temporal_smoothing": 0.8
+    }
+  },
+  "error_scenarios": {
+    "webgpu_not_supported": {
+      "description": "Browser doesn't support WebGPU",
+      "expected_behavior": "Graceful fallback to WebGL or software rendering"
+    },
+    "insufficient_memory": {
+      "description": "Device has insufficient GPU memory",
+      "expected_behavior": "Reduce quality settings automatically"
+    },
+    "model_loading_failure": {
+      "description": "NeRF model file is corrupted or missing",
+      "expected_behavior": "Show error message and fallback options"
+    },
+    "performance_degradation": {
+      "description": "Frame rate drops below target",
+      "expected_behavior": "Adaptive quality reduction"
+    }
+  }
+}
