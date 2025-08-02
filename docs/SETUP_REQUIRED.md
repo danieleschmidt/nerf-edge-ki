@@ -4,11 +4,36 @@ This document lists the manual setup steps that need to be performed by reposito
 
 ## GitHub Workflows
 
-The following workflow files need to be manually created in `.github/workflows/`:
+⚠️ **CRITICAL**: Due to GitHub App permission limitations, workflow files have been prepared for manual deployment.
 
-### 1. Copy Workflow Templates
+### 1. Ready-to-Deploy Workflow Files
 
-Copy the following files from `docs/workflows/examples/` to `.github/workflows/`:
+Production-ready workflow files are available in:
+- `docs/workflows/ready-to-deploy/ci.yml` - Complete CI pipeline
+- `docs/workflows/ready-to-deploy/release.yml` - Automated release pipeline  
+- `docs/workflows/ready-to-deploy/README.md` - Deployment instructions
+
+### 2. Manual Deployment Steps
+
+Repository maintainers with `workflows` permission should:
+
+```bash
+# Create workflows directory
+mkdir -p .github/workflows
+
+# Copy ready-to-deploy files
+cp docs/workflows/ready-to-deploy/ci.yml .github/workflows/
+cp docs/workflows/ready-to-deploy/release.yml .github/workflows/
+
+# Commit and deploy
+git add .github/workflows/
+git commit -m "feat: deploy GitHub Actions CI/CD workflows"
+git push origin main
+```
+
+### 3. Alternative: Copy from Examples
+
+Fallback option using example templates:
 
 ```bash
 cp docs/workflows/examples/ci.yml .github/workflows/
