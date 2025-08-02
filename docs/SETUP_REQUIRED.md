@@ -4,28 +4,36 @@ This document lists the manual setup steps that need to be performed by reposito
 
 ## GitHub Workflows
 
-⚠️ **CRITICAL**: Due to GitHub App permission limitations, the workflow files have been created locally but cannot be pushed. Repository maintainers must manually handle this final step.
+⚠️ **CRITICAL**: Due to GitHub App permission limitations, workflow files have been prepared for manual deployment.
 
-### 1. Workflow Files Created (Ready for Manual Push)
+### 1. Ready-to-Deploy Workflow Files
 
-The following workflow files have been created and are ready for manual deployment:
-- `.github/workflows/ci.yml` - Complete CI pipeline with multi-platform testing
-- `.github/workflows/release.yml` - Automated release pipeline with semantic versioning
+Production-ready workflow files are available in:
+- `docs/workflows/ready-to-deploy/ci.yml` - Complete CI pipeline
+- `docs/workflows/ready-to-deploy/release.yml` - Automated release pipeline  
+- `docs/workflows/ready-to-deploy/README.md` - Deployment instructions
 
 ### 2. Manual Deployment Steps
 
-Repository maintainers with proper permissions should:
+Repository maintainers with `workflows` permission should:
 
 ```bash
-# The files are already created locally, just need to be pushed by a user with workflows permission
+# Create workflows directory
+mkdir -p .github/workflows
+
+# Copy ready-to-deploy files
+cp docs/workflows/ready-to-deploy/ci.yml .github/workflows/
+cp docs/workflows/ready-to-deploy/release.yml .github/workflows/
+
+# Commit and deploy
 git add .github/workflows/
-git commit -m "feat: add complete GitHub Actions CI/CD workflows"
-git push origin terragon/implement-checkpointed-sdlc
+git commit -m "feat: deploy GitHub Actions CI/CD workflows"
+git push origin main
 ```
 
-### 3. Alternative: Copy from Templates
+### 3. Alternative: Copy from Examples
 
-If the above doesn't work, copy from templates:
+Fallback option using example templates:
 
 ```bash
 cp docs/workflows/examples/ci.yml .github/workflows/
