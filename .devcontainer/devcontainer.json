@@ -1,0 +1,69 @@
+{
+  "name": "nerf-edge-kit Development",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "nerf-edge-kit",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-toolsai.jupyter",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.swift-lang",
+        "ms-vscode.cpptools",
+        "github.copilot",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-json",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "eslint.workingDirectories": ["./"],
+        "typescript.preferences.importModuleSpecifier": "relative"
+      }
+    }
+  },
+  "forwardPorts": [3000, 8888, 6006],
+  "portsAttributes": {
+    "3000": {
+      "label": "Web Development Server",
+      "protocol": "http"
+    },
+    "8888": {
+      "label": "Jupyter Notebook",
+      "protocol": "http"
+    },
+    "6006": {
+      "label": "TensorBoard",
+      "protocol": "http"
+    }
+  },
+  "postCreateCommand": "npm install && pip install -r requirements-dev.txt",
+  "postStartCommand": "git config --global --add safe.directory /workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "remoteEnv": {
+    "NODE_ENV": "development",
+    "PYTHONPATH": "/workspace/python:/workspace",
+    "DEBUG": "nerf:*",
+    "WEBGPU_BACKEND": "webgpu"
+  }
+}

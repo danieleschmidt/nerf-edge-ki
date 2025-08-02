@@ -10,12 +10,17 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:perf": "jest --config jest-performance.config.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.{ts,js,json}",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist coverage",
-    "prepare": "husky install"
+    "clean": "rm -rf dist coverage .nyc_output",
+    "security-check": "npm audit && npm outdated",
+    "prepare": "husky install",
+    "prebuild": "npm run clean && npm run lint && npm run typecheck",
+    "postinstall": "npm run prepare",
+    "start": "npm run dev"
   },
   "keywords": [
     "nerf",
