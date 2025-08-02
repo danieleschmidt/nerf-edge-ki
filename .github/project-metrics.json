@@ -1,0 +1,278 @@
+{
+  "project": {
+    "name": "nerf-edge-kit",
+    "description": "Real-time Neural Radiance Field SDK for spatial computing",
+    "version": "1.0.0",
+    "created": "2025-08-02",
+    "license": "MIT",
+    "platforms": ["iOS", "Web", "Python"],
+    "languages": ["TypeScript", "Swift", "Python", "Metal", "WGSL"]
+  },
+  "metrics": {
+    "development": {
+      "lines_of_code": {
+        "total": 0,
+        "typescript": 0,
+        "swift": 0,
+        "python": 0,
+        "metal": 0,
+        "wgsl": 0,
+        "documentation": 0,
+        "tests": 0,
+        "config": 0
+      },
+      "files": {
+        "total": 0,
+        "source": 0,
+        "test": 0,
+        "documentation": 0,
+        "configuration": 0
+      },
+      "complexity": {
+        "cyclomatic_avg": 0,
+        "cognitive_avg": 0,
+        "maintainability_index": 0,
+        "technical_debt_ratio": 0
+      }
+    },
+    "testing": {
+      "coverage": {
+        "overall": 0,
+        "typescript": 0,
+        "python": 0,
+        "swift": 0,
+        "target": 70
+      },
+      "test_counts": {
+        "unit": 0,
+        "integration": 0,
+        "e2e": 0,
+        "performance": 0
+      },
+      "quality": {
+        "passing_rate": 0,
+        "flaky_test_ratio": 0,
+        "avg_execution_time": 0,
+        "slowest_tests": []
+      }
+    },
+    "performance": {
+      "benchmarks": {
+        "web_fps": {
+          "current": 0,
+          "target": 60,
+          "trend": "stable"
+        },
+        "ios_fps": {
+          "current": 0,
+          "target": 90,
+          "trend": "stable"
+        },
+        "render_latency_ms": {
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "target_p95": 16.67
+        },
+        "memory_usage_mb": {
+          "web": 0,
+          "ios": 0,
+          "python": 0
+        },
+        "bundle_size_kb": {
+          "web": 0,
+          "gzipped": 0,
+          "target": 5000
+        }
+      },
+      "regression_tracking": {
+        "enabled": true,
+        "threshold_percent": 10,
+        "baseline_commit": "",
+        "last_updated": ""
+      }
+    },
+    "security": {
+      "vulnerabilities": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "total": 0
+      },
+      "dependencies": {
+        "total": 0,
+        "outdated": 0,
+        "security_updates_available": 0
+      },
+      "scans": {
+        "last_full_scan": "",
+        "last_dependency_scan": "",
+        "last_container_scan": ""
+      }
+    },
+    "quality": {
+      "code_smells": 0,
+      "bugs": 0,
+      "duplicated_lines_density": 0,
+      "maintainability_rating": "A",
+      "reliability_rating": "A",
+      "security_rating": "A",
+      "sonarqube_score": 0
+    },
+    "activity": {
+      "commits": {
+        "total": 0,
+        "last_30_days": 0,
+        "contributors": []
+      },
+      "pull_requests": {
+        "open": 0,
+        "merged": 0,
+        "closed": 0,
+        "avg_merge_time_hours": 0
+      },
+      "issues": {
+        "open": 0,
+        "closed": 0,
+        "avg_resolution_time_hours": 0
+      },
+      "releases": {
+        "total": 0,
+        "last_release": "",
+        "release_frequency_days": 0
+      }
+    },
+    "deployment": {
+      "success_rate": 0,
+      "avg_deployment_time_minutes": 0,
+      "rollback_rate": 0,
+      "environments": {
+        "staging": {
+          "status": "unknown",
+          "last_deployed": "",
+          "uptime_percent": 0
+        },
+        "production": {
+          "status": "unknown",
+          "last_deployed": "",
+          "uptime_percent": 0
+        }
+      }
+    },
+    "usage": {
+      "npm_downloads": {
+        "total": 0,
+        "last_30_days": 0,
+        "growth_rate": 0
+      },
+      "pypi_downloads": {
+        "total": 0,
+        "last_30_days": 0,
+        "growth_rate": 0
+      },
+      "github": {
+        "stars": 0,
+        "forks": 0,
+        "watchers": 0,
+        "clones": 0,
+        "views": 0
+      },
+      "platforms": {
+        "web_active_users": 0,
+        "ios_active_users": 0,
+        "python_active_users": 0
+      }
+    }
+  },
+  "targets": {
+    "performance": {
+      "web_fps": 60,
+      "ios_fps": 90,
+      "render_latency_p95_ms": 16.67,
+      "bundle_size_kb": 5000,
+      "memory_usage_web_mb": 2048,
+      "memory_usage_ios_mb": 1024
+    },
+    "quality": {
+      "test_coverage_percent": 70,
+      "code_coverage_typescript": 80,
+      "code_coverage_python": 75,
+      "code_coverage_swift": 70,
+      "technical_debt_ratio": 5,
+      "maintainability_index": 80
+    },
+    "security": {
+      "max_critical_vulnerabilities": 0,
+      "max_high_vulnerabilities": 0,
+      "max_dependency_age_days": 365,
+      "security_scan_frequency_days": 1
+    },
+    "deployment": {
+      "deployment_success_rate": 95,
+      "max_deployment_time_minutes": 30,
+      "max_rollback_rate": 5,
+      "uptime_target": 99.9
+    },
+    "growth": {
+      "monthly_download_growth": 10,
+      "contributor_count": 5,
+      "issue_resolution_time_hours": 48,
+      "pr_merge_time_hours": 24
+    }
+  },
+  "alerts": {
+    "performance_regression": {
+      "enabled": true,
+      "threshold_percent": 10,
+      "channels": ["slack", "email"]
+    },
+    "security_vulnerability": {
+      "enabled": true,
+      "severity": ["critical", "high"],
+      "channels": ["slack", "email", "pagerduty"]
+    },
+    "test_failure": {
+      "enabled": true,
+      "consecutive_failures": 3,
+      "channels": ["slack"]
+    },
+    "deployment_failure": {
+      "enabled": true,
+      "channels": ["slack", "email", "pagerduty"]
+    }
+  },
+  "automation": {
+    "dependency_updates": {
+      "enabled": true,
+      "schedule": "weekly",
+      "auto_merge_minor": true,
+      "auto_merge_patch": true
+    },
+    "performance_monitoring": {
+      "enabled": true,
+      "schedule": "daily",
+      "baseline_update": "monthly"
+    },
+    "security_scanning": {
+      "enabled": true,
+      "schedule": "daily",
+      "container_scanning": true,
+      "dependency_scanning": true
+    },
+    "code_quality": {
+      "enabled": true,
+      "sonarqube_integration": true,
+      "pr_analysis": true
+    }
+  },
+  "reporting": {
+    "frequency": "weekly",
+    "recipients": ["team@nerf-edge-kit.dev"],
+    "format": "json",
+    "include_trends": true,
+    "include_recommendations": true
+  },
+  "last_updated": "2025-08-02T00:00:00Z",
+  "schema_version": "1.0"
+}
