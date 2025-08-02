@@ -35,7 +35,7 @@ COPY web/ ./web/
 RUN npm run build
 
 # Stage 3: Python environment for training
-FROM python:3.11-slim AS python-env
+FROM python:3.13-slim AS python-env
 WORKDIR /python
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
