@@ -1,0 +1,317 @@
+# Docker Compose for NeRF Edge Kit Monitoring Stack
+# Usage: docker-compose -f monitoring-stack.yml up -d
+
+version: '3.8'
+
+services:
+  # Prometheus - Metrics collection and storage
+  prometheus:
+    image: prom/prometheus:v2.40.0
+    container_name: nerf-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:9.3.0
+    container_name: nerf-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=nerf-monitoring-2025
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel
+      - GF_RENDERING_SERVER_URL=http://renderer:8081
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_LOG_FILTERS=rendering:debug
+    networks:
+      - nerf-monitoring
+    depends_on:
+      - prometheus
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # AlertManager - Alert routing and management
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: nerf-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+      - '--web.route-prefix=/'
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Node Exporter - System metrics
+  node-exporter:
+    image: prom/node-exporter:v1.5.0
+    container_name: nerf-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # cAdvisor - Container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.46.0
+    container_name: nerf-cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # NVIDIA DCGM Exporter - GPU metrics (requires NVIDIA GPU)
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.2-ubuntu20.04
+    container_name: nerf-dcgm-exporter
+    restart: unless-stopped
+    ports:
+      - "9400:9400"
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./dcgm-exporter/dcp-metrics-included.csv:/etc/dcgm-exporter/dcp-metrics-included.csv:ro
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+    profiles:
+      - gpu
+
+  # Redis Exporter - Redis metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.45.0
+    container_name: nerf-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    networks:
+      - nerf-monitoring
+    depends_on:
+      - redis
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # PostgreSQL Exporter - Database metrics
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.11.1
+    container_name: nerf-postgres-exporter
+    restart: unless-stopped
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://nerf_user:nerf_password@postgres:5432/nerf_edge_kit?sslmode=disable
+    networks:
+      - nerf-monitoring
+    depends_on:
+      - postgres
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Nginx Exporter - Web server metrics
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.10.0
+    container_name: nerf-nginx-exporter
+    restart: unless-stopped
+    ports:
+      - "9113:9113"
+    command:
+      - '-nginx.scrape-uri=http://nginx:8080/stub_status'
+    networks:
+      - nerf-monitoring
+    depends_on:
+      - nginx
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:2.7.0
+    container_name: nerf-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+      - ./loki/config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Promtail - Log shipper
+  promtail:
+    image: grafana/promtail:2.7.0
+    container_name: nerf-promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - nerf-monitoring
+    depends_on:
+      - loki
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Grafana Image Renderer - For PDF/PNG report generation
+  renderer:
+    image: grafana/grafana-image-renderer:3.6.1
+    container_name: nerf-renderer
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ENABLE_METRICS: 'true'
+      RENDERING_MODE: default
+      RENDERING_CLUSTERING_MODE: browser
+      RENDERING_CLUSTERING_MAX_CONCURRENCY: 4
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # Jaeger - Distributed tracing (optional)
+  jaeger:
+    image: jaegertracing/all-in-one:1.40
+    container_name: nerf-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+      - "6831:6831/udp"  # UDP collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "monitoring"
+    profiles:
+      - tracing
+
+  # Application dependencies (referenced by exporters)
+  redis:
+    image: redis:7-alpine
+    container_name: nerf-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "dependencies"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: nerf-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: nerf_edge_kit
+      POSTGRES_USER: nerf_user
+      POSTGRES_PASSWORD: nerf_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "dependencies"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nerf-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8080:8080"  # Status endpoint
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/status.conf:/etc/nginx/conf.d/status.conf:ro
+    networks:
+      - nerf-monitoring
+    labels:
+      org.label-schema.group: "dependencies"
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  loki_data:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  nerf-monitoring:
+    driver: bridge
+    name: nerf-monitoring-network
