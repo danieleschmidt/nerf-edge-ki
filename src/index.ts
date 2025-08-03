@@ -19,6 +19,9 @@ export { NeRFStorage } from './database/NeRFStorage';
 export { CacheManager } from './database/CacheManager';
 export { ModelRepository } from './repositories/ModelRepository';
 
+// API exports
+export { NerfAPI } from './api/NerfAPI';
+
 // Type exports
 export type {
   NerfConfig,
@@ -67,6 +70,11 @@ export type {
   ModelUpdateRequest,
   ModelStats
 } from './repositories/ModelRepository';
+
+export type {
+  APIResponse,
+  APIConfig
+} from './api/NerfAPI';
 
 /**
  * SDK Version
