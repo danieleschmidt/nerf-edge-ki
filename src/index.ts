@@ -22,6 +22,13 @@ export { ModelRepository } from './repositories/ModelRepository';
 // API exports
 export { NerfAPI } from './api/NerfAPI';
 
+// Integration exports
+export { GitHubIntegration } from './integrations/GitHubIntegration';
+export { NotificationService } from './integrations/NotificationService';
+
+// Worker exports
+export { default as NerfWorker } from './workers/NerfWorker';
+
 // Type exports
 export type {
   NerfConfig,
@@ -75,6 +82,22 @@ export type {
   APIResponse,
   APIConfig
 } from './api/NerfAPI';
+
+export type {
+  GitHubConfig,
+  GitHubRelease,
+  ModelVersion
+} from './integrations/GitHubIntegration';
+
+export type {
+  NotificationConfig,
+  NotificationEvent
+} from './integrations/NotificationService';
+
+export type {
+  WorkerMessage,
+  WorkerResponse
+} from './workers/NerfWorker';
 
 /**
  * SDK Version
