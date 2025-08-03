@@ -5,7 +5,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && webpack --mode production",
+    "build": "node scripts/build-automation.js --production",
+    "build:dev": "node scripts/build-automation.js",
+    "build:web": "tsc && webpack --mode production",
+    "build:analyze": "node scripts/build-automation.js --production --analyze",
     "dev": "webpack serve --mode development",
     "test": "jest",
     "test:unit": "jest tests/unit/",
@@ -18,12 +21,16 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.{ts,js,json}",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist coverage .nyc_output",
+    "clean": "rm -rf dist coverage .nyc_output .tmp",
     "security-check": "npm audit && npm outdated",
     "prepare": "husky install",
     "prebuild": "npm run clean && npm run lint && npm run typecheck",
     "postinstall": "npm run prepare",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "docs:generate": "typedoc src --out docs/api --theme minimal",
+    "docker:build": "docker build -t nerf-edge-kit .",
+    "docker:dev": "docker-compose up development",
+    "docker:prod": "docker-compose up production-web"
   },
   "keywords": [
     "nerf",
