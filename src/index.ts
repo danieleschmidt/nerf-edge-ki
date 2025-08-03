@@ -14,6 +14,11 @@ export { SpatialUtils } from './utils/SpatialUtils';
 export { NerfService } from './services/NerfService';
 export { PerformanceService } from './services/PerformanceService';
 
+// Database exports
+export { NeRFStorage } from './database/NeRFStorage';
+export { CacheManager } from './database/CacheManager';
+export { ModelRepository } from './repositories/ModelRepository';
+
 // Type exports
 export type {
   NerfConfig,
@@ -44,6 +49,24 @@ export type {
   PerformanceProfile,
   BenchmarkResult
 } from './services/PerformanceService';
+
+export type {
+  StoredModel,
+  StorageStats
+} from './database/NeRFStorage';
+
+export type {
+  CacheEntry,
+  CacheConfig,
+  CacheMetrics
+} from './database/CacheManager';
+
+export type {
+  ModelQuery,
+  ModelCreateRequest,
+  ModelUpdateRequest,
+  ModelStats
+} from './repositories/ModelRepository';
 
 /**
  * SDK Version
