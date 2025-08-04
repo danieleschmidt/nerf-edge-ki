@@ -316,7 +316,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ```bibtex
 @inproceedings{nerf_edge_kit,
   title={NeRF-Edge: Real-time Neural Rendering for Spatial Computing},
-  author={Your Name},
+  author={Daniel Schmidt},
   booktitle={IEEE VR},
   year={2025}
 }
