@@ -29,6 +29,9 @@ export { NotificationService } from './integrations/NotificationService';
 // Worker exports
 export { default as NerfWorker } from './workers/NerfWorker';
 
+// Quantum-Inspired Task Planning exports
+export { QuantumTaskPlanner, QuantumNerfScheduler, QuantumUtils, QuantumPerformanceOptimizer } from './quantum';
+
 // Type exports
 export type {
   NerfConfig,
@@ -98,6 +101,16 @@ export type {
   WorkerMessage,
   WorkerResponse
 } from './workers/NerfWorker';
+
+export type {
+  QuantumTask,
+  ResourceRequirements,
+  QuantumState,
+  Complex,
+  ScheduleResult,
+  NerfRenderTask,
+  NerfScheduleConfig
+} from './quantum';
 
 /**
  * SDK Version
