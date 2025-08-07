@@ -32,6 +32,9 @@ export { default as NerfWorker } from './workers/NerfWorker';
 // Quantum-Inspired Task Planning exports
 export { QuantumTaskPlanner, QuantumNerfScheduler, QuantumUtils, QuantumPerformanceOptimizer } from './quantum';
 
+// Research Components exports
+export * from './research';
+
 // Type exports
 export type {
   NerfConfig,
