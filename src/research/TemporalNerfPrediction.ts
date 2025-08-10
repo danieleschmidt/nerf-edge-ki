@@ -569,8 +569,8 @@ export class TemporalNerfPrediction {
     this.frameHistory = trainingFrames;
     
     let linearError = 0;
-    let kalmanError = 0;
-    let neuralError = 0;
+    const kalmanError = 0;
+    const neuralError = 0;
     
     for (let i = 0; i < testFrames.length - 1; i++) {
       const predicted = this.predictFutureFrame(1);

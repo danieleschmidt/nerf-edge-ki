@@ -1,5 +1,5 @@
 /** @type {import('jest').Config} */
-module.exports = {
+export default {
   // Test environment
   testEnvironment: 'jsdom',
   
@@ -8,7 +8,6 @@ module.exports = {
   
   // Test file patterns
   testMatch: [
-    '<rootDir>/web/tests/**/*.test.{ts,tsx,js,jsx}',
     '<rootDir>/tests/**/*.test.{ts,tsx,js,jsx}'
   ],
   
@@ -22,9 +21,9 @@ module.exports = {
   },
   
   // Module name mapping for absolute imports
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/web/src/$1',
-    '^@tests/(.*)$': '<rootDir>/web/tests/$1'
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1'
   },
   
   // File extensions to consider
@@ -32,10 +31,10 @@ module.exports = {
   
   // Coverage configuration
   collectCoverageFrom: [
-    'web/src/**/*.{ts,tsx}',
-    '!web/src/**/*.d.ts',
-    '!web/src/**/*.stories.{ts,tsx}',
-    '!web/src/index.ts'
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/*.stories.{ts,tsx}',
+    '!src/index.ts'
   ],
   
   // Coverage thresholds
@@ -68,5 +67,14 @@ module.exports = {
   testTimeout: 10000,
   
   // Verbose output for CI
-  verbose: process.env.CI === 'true'
+  verbose: process.env.CI === 'true',
+  
+  // ES module support
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
+  preset: 'ts-jest/presets/default-esm'
 };

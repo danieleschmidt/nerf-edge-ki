@@ -227,8 +227,8 @@ export class AdvancedNerfOptimizer {
   ): Promise<OptimizationResult> {
     
     const startTime = performance.now();
-    let totalMemoryReduction = 0;
-    let qualityMetric = 1.0;
+    const totalMemoryReduction = 0;
+    const qualityMetric = 1.0;
     
     // Algorithm 1: Temporal Coherence
     const temporalResult = await this.optimizeTemporalCoherence(

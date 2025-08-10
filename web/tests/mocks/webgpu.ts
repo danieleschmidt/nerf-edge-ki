@@ -101,12 +101,23 @@ export function setupWebGPUMocks() {
     configurable: true,
   });
 
-  HTMLCanvasElement.prototype.getContext = jest.fn((contextId) => {
+  HTMLCanvasElement.prototype.getContext = jest.fn((contextId: string) => {
     if (contextId === 'webgpu') {
       return mockCanvasContext;
     }
+    if (contextId === '2d') {
+      return {
+        fillRect: jest.fn(),
+        clearRect: jest.fn(),
+        getImageData: jest.fn(),
+        putImageData: jest.fn(),
+        createImageData: jest.fn(),
+        drawImage: jest.fn(),
+        canvas: { width: 1920, height: 1080 }
+      };
+    }
     return null;
-  });
+  }) as any;
 }
 
 // Performance measurement mocks
