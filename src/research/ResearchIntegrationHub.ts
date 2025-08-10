@@ -679,7 +679,7 @@ export class ResearchIntegrationHub {
     // For now, return a mock result showing multiplicative improvements
     
     const baseline = await this.runBaselineConfiguration();
-    let experimental = { ...baseline };
+    const experimental = { ...baseline };
     
     // Apply multiplicative effects
     experimental.fps *= 150; // Combined 150x improvement

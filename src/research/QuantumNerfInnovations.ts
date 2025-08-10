@@ -480,7 +480,7 @@ export class QuantumNerfInnovations {
    * Quantum volume rendering with interference effects
    */
   quantumVolumeRender(samples: QuantumSample[], neuralOutputs: Float32Array): [number, number, number, number] {
-    let finalColor = [0, 0, 0];
+    const finalColor = [0, 0, 0];
     let finalAlpha = 0;
     let transmittance = 1.0;
     

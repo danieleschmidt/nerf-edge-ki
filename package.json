@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "nerf-edge-kit",
   "version": "1.0.0",
   "description": "Real-time Neural Radiance Field SDK for spatial computing",

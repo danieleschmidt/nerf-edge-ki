@@ -113,7 +113,8 @@ export class NerfStreamer {
     for (let x = Math.floor(minBounds[0] / chunkSize); x <= Math.floor(maxBounds[0] / chunkSize); x++) {
       for (let y = Math.floor(minBounds[1] / chunkSize); y <= Math.floor(maxBounds[1] / chunkSize); y++) {
         for (let z = Math.floor(minBounds[2] / chunkSize); z <= Math.floor(maxBounds[2] / chunkSize); z++) {
-          const chunkId = `${x}_${y}_${z}`;\n          chunks.push(chunkId);
+          const chunkId = `${x}_${y}_${z}`;
+          chunks.push(chunkId);
         }
       }
     }

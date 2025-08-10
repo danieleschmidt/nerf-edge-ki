@@ -154,7 +154,7 @@ export class NerfRenderer {
     // Update memory stats
     this.renderStats.memoryAllocated = scene.getMemoryUsage();
     
-    console.log(`Scene set: ${scene.getConfig().name} (${scene.getVisibleModels().length} models, ${this.renderStats.memoryAllocated / 1024 / 1024:.1f}MB)`);
+    console.log(`Scene set: ${scene.getConfig().name} (${scene.getVisibleModels().length} models, ${(this.renderStats.memoryAllocated / 1024 / 1024).toFixed(1)}MB)`);
   }
 
   /**
