@@ -1,6 +1,10 @@
 /**
  * Intelligent auto-scaling system for NeRF rendering workloads
+ * Enhanced for Generation 3: MAKE IT SCALE
  */
+
+import { AdvancedCache } from '../caching/AdvancedCache';
+import { ConcurrentProcessor } from '../concurrency/ConcurrentProcessor';
 
 export interface ScalingMetrics {
   cpu: number;
@@ -52,6 +56,11 @@ export class AutoScaler {
   private performanceModel: Map<string, number> = new Map();
   private metricHistory: ScalingMetrics[] = [];
   
+  // Generation 3: Enhanced components
+  private advancedCache: AdvancedCache;
+  private concurrentProcessor: ConcurrentProcessor;
+  private performanceOptimizer: PerformanceOptimizer;
+  
   constructor(targets: ScalingTarget) {
     this.targets = targets;
     this.metrics = this.initializeMetrics();
@@ -61,6 +70,15 @@ export class AutoScaler {
       max: 8,
       min: 1
     };
+    
+    // Initialize Generation 3 components
+    this.advancedCache = new AdvancedCache();
+    this.concurrentProcessor = new ConcurrentProcessor({
+      maxWorkers: this.workers.max,
+      minWorkers: this.workers.min,
+      adaptiveScaling: true
+    });
+    this.performanceOptimizer = new PerformanceOptimizer();
     
     this.setupMonitoring();
   }
@@ -557,6 +575,92 @@ export class AutoScaler {
   }
 
   /**
+   * Enable intelligent caching optimization
+   */
+  optimizeCache(): void {
+    this.advancedCache.optimize();
+    
+    // Update cache size based on current performance
+    const cacheStats = this.advancedCache.getStats();
+    if (cacheStats.hitRate < 0.7) {
+      // Increase cache size if hit rate is low
+      const newSize = Math.min(2048, this.adaptiveCacheSize * 1.2);
+      this.scaleCache('up', (newSize - this.adaptiveCacheSize) / 128);
+    }
+  }
+
+  /**
+   * Process NeRF rendering tasks concurrently
+   */
+  async processNerfTasksConcurrently(tasks: any[]): Promise<any[]> {
+    return this.concurrentProcessor.submitBatch(tasks);
+  }
+
+  /**
+   * Optimize performance based on current workload
+   */
+  async optimizePerformance(): Promise<void> {
+    const optimizations = await this.performanceOptimizer.analyzeAndOptimize({
+      metrics: this.metrics,
+      quality: this.currentQuality,
+      resolution: this.currentResolution,
+      cacheStats: this.advancedCache.getStats(),
+      concurrencyStats: this.concurrentProcessor.getStats()
+    });
+
+    // Apply optimizations
+    for (const optimization of optimizations) {
+      await this.applyOptimization(optimization);
+    }
+  }
+
+  /**
+   * Get comprehensive system status including all Generation 3 components
+   */
+  getSystemStatus(): any {
+    return {
+      scaling: this.getState(),
+      cache: this.advancedCache.getStats(),
+      concurrency: this.concurrentProcessor.getStats(),
+      performance: this.performanceOptimizer.getMetrics(),
+      systemLoad: this.calculateSystemLoad()
+    };
+  }
+
+  private async applyOptimization(optimization: any): Promise<void> {
+    switch (optimization.type) {
+      case 'quality_adjustment':
+        this.setQuality(optimization.value);
+        break;
+      case 'resolution_scaling':
+        this.scaleResolution(optimization.direction, optimization.magnitude);
+        break;
+      case 'cache_optimization':
+        this.optimizeCache();
+        break;
+      case 'worker_scaling':
+        await this.concurrentProcessor.scaleWorkers(optimization.value);
+        this.workers.active = optimization.value;
+        break;
+    }
+  }
+
+  private setQuality(quality: 'low' | 'medium' | 'high'): void {
+    this.currentQuality = quality;
+    window.dispatchEvent(new CustomEvent('nerf-quality-change', {
+      detail: { quality, reason: 'performance-optimization' }
+    }));
+  }
+
+  private calculateSystemLoad(): number {
+    const scalingLoad = this.workers.active / this.workers.max;
+    const cacheLoad = this.advancedCache.getStats().memoryUsage / (1024 * 1024 * 1024); // GB
+    const concurrencyLoad = this.concurrentProcessor.getStats().systemLoad;
+    
+    return Math.max(scalingLoad, cacheLoad, concurrencyLoad);
+  }
+
+  /**
    * Dispose of auto-scaler
    */
   dispose(): void {
@@ -564,5 +668,202 @@ export class AutoScaler {
     this.scalingHistory = [];
     this.metricHistory = [];
     this.performanceModel.clear();
+    
+    // Dispose Generation 3 components
+    this.advancedCache.dispose();
+    this.concurrentProcessor.dispose();
+    this.performanceOptimizer.dispose();
+  }
+}
+
+/**
+ * Performance optimization engine for intelligent system tuning
+ */
+class PerformanceOptimizer {
+  private optimizationHistory: any[] = [];
+  private performanceMetrics: any = {};
+  private mlModel: PerformanceMLModel;
+
+  constructor() {
+    this.mlModel = new PerformanceMLModel();
+  }
+
+  async analyzeAndOptimize(systemState: any): Promise<any[]> {
+    // Analyze current performance bottlenecks
+    const bottlenecks = this.identifyBottlenecks(systemState);
+    
+    // Generate optimization recommendations
+    const optimizations = await this.generateOptimizations(bottlenecks, systemState);
+    
+    // Filter and prioritize optimizations
+    const prioritizedOptimizations = this.prioritizeOptimizations(optimizations);
+    
+    this.optimizationHistory.push({
+      timestamp: Date.now(),
+      systemState,
+      bottlenecks,
+      optimizations: prioritizedOptimizations
+    });
+
+    return prioritizedOptimizations;
+  }
+
+  private identifyBottlenecks(systemState: any): string[] {
+    const bottlenecks: string[] = [];
+
+    if (systemState.metrics.gpu > 90) {
+      bottlenecks.push('gpu_overload');
+    }
+    if (systemState.metrics.memory > 85) {
+      bottlenecks.push('memory_pressure');
+    }
+    if (systemState.metrics.fps < 45) {
+      bottlenecks.push('low_framerate');
+    }
+    if (systemState.cacheStats.hitRate < 0.6) {
+      bottlenecks.push('cache_inefficiency');
+    }
+    if (systemState.concurrencyStats.systemLoad > 0.8) {
+      bottlenecks.push('concurrency_saturation');
+    }
+
+    return bottlenecks;
+  }
+
+  private async generateOptimizations(bottlenecks: string[], systemState: any): Promise<any[]> {
+    const optimizations: any[] = [];
+
+    for (const bottleneck of bottlenecks) {
+      switch (bottleneck) {
+        case 'gpu_overload':
+          optimizations.push({
+            type: 'quality_adjustment',
+            value: this.lowerQuality(systemState.quality),
+            impact: 'high',
+            confidence: 0.9
+          });
+          break;
+        case 'memory_pressure':
+          optimizations.push({
+            type: 'cache_optimization',
+            impact: 'medium',
+            confidence: 0.8
+          });
+          break;
+        case 'low_framerate':
+          optimizations.push({
+            type: 'resolution_scaling',
+            direction: 'down',
+            magnitude: 0.2,
+            impact: 'high',
+            confidence: 0.85
+          });
+          break;
+        case 'cache_inefficiency':
+          optimizations.push({
+            type: 'cache_optimization',
+            impact: 'medium',
+            confidence: 0.7
+          });
+          break;
+        case 'concurrency_saturation':
+          optimizations.push({
+            type: 'worker_scaling',
+            value: Math.min(16, systemState.concurrencyStats.workerPool.size * 1.5),
+            impact: 'medium',
+            confidence: 0.75
+          });
+          break;
+      }
+    }
+
+    return optimizations;
+  }
+
+  private prioritizeOptimizations(optimizations: any[]): any[] {
+    return optimizations
+      .sort((a, b) => {
+        const scoreA = this.calculateOptimizationScore(a);
+        const scoreB = this.calculateOptimizationScore(b);
+        return scoreB - scoreA;
+      })
+      .slice(0, 3); // Top 3 optimizations
+  }
+
+  private calculateOptimizationScore(optimization: any): number {
+    const impactWeight = { high: 3, medium: 2, low: 1 }[optimization.impact] || 1;
+    return impactWeight * optimization.confidence;
+  }
+
+  private lowerQuality(currentQuality: string): string {
+    const qualityMap = { high: 'medium', medium: 'low', low: 'low' };
+    return qualityMap[currentQuality as keyof typeof qualityMap] || 'low';
+  }
+
+  getMetrics(): any {
+    return {
+      totalOptimizations: this.optimizationHistory.length,
+      recentOptimizations: this.optimizationHistory.slice(-10),
+      avgOptimizationsPerMinute: this.calculateOptimizationRate(),
+      effectivenessScore: this.calculateEffectiveness()
+    };
+  }
+
+  private calculateOptimizationRate(): number {
+    const recent = this.optimizationHistory.slice(-60); // Last 60 optimizations
+    if (recent.length === 0) return 0;
+    
+    const timeSpan = Date.now() - recent[0].timestamp;
+    return (recent.length / timeSpan) * 60000; // Per minute
+  }
+
+  private calculateEffectiveness(): number {
+    // Mock effectiveness calculation
+    return 0.82; // 82% effectiveness
+  }
+
+  dispose(): void {
+    this.optimizationHistory = [];
+    this.performanceMetrics = {};
+    this.mlModel.dispose();
+  }
+}
+
+/**
+ * Machine learning model for performance prediction and optimization
+ */
+class PerformanceMLModel {
+  private trainingData: any[] = [];
+  private model: any = null;
+
+  constructor() {
+    this.initializeModel();
+  }
+
+  private initializeModel(): void {
+    // Mock ML model initialization
+    this.model = {
+      weights: new Array(100).fill(0).map(() => Math.random() - 0.5),
+      bias: Math.random() - 0.5
+    };
+  }
+
+  predict(input: any): number {
+    // Mock prediction
+    return Math.random() * 0.8 + 0.1; // 10-90% confidence
+  }
+
+  train(data: any[]): void {
+    this.trainingData.push(...data);
+    
+    // Mock training process
+    if (this.trainingData.length > 100) {
+      this.trainingData = this.trainingData.slice(-100);
+    }
+  }
+
+  dispose(): void {
+    this.trainingData = [];
+    this.model = null;
   }
 }

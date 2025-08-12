@@ -465,19 +465,160 @@ export class NerfRenderer {
         foveationParams: vec4<f32>,
       };
       
+      struct NerfWeights {
+        layer1: array<f32, 3072>,    // 6 * 512 input layer weights
+        bias1: array<f32, 512>,      // bias for layer 1
+        layer2: array<f32, 262144>,  // 512 * 512 hidden layer weights
+        bias2: array<f32, 512>,      // bias for layer 2
+        layer3: array<f32, 262144>,  // 512 * 512 hidden layer weights  
+        bias3: array<f32, 512>,      // bias for layer 3
+        layer4: array<f32, 2048>,    // 512 * 4 output layer weights
+        bias4: array<f32, 4>,        // bias for output layer
+      };
+      
       @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+      @group(0) @binding(1) var<storage, read> weights: NerfWeights;
+      
+      fn positionalEncoding(pos: vec3<f32>, L: i32) -> array<f32, 60> {
+        var encoded: array<f32, 60>;
+        var idx = 0;
+        
+        // Original position
+        encoded[idx] = pos.x; idx += 1;
+        encoded[idx] = pos.y; idx += 1;
+        encoded[idx] = pos.z; idx += 1;
+        
+        // Sinusoidal encoding
+        for (var l = 0; l < L; l++) {
+          let freq = pow(2.0, f32(l));
+          encoded[idx] = sin(freq * pos.x); idx += 1;
+          encoded[idx] = cos(freq * pos.x); idx += 1;
+          encoded[idx] = sin(freq * pos.y); idx += 1;
+          encoded[idx] = cos(freq * pos.y); idx += 1;
+          encoded[idx] = sin(freq * pos.z); idx += 1;
+          encoded[idx] = cos(freq * pos.z); idx += 1;
+        }
+        
+        return encoded;
+      }
+      
+      fn relu(x: f32) -> f32 {
+        return max(0.0, x);
+      }
+      
+      fn sigmoid(x: f32) -> f32 {
+        return 1.0 / (1.0 + exp(-x));
+      }
+      
+      fn nerfNetwork(pos: vec3<f32>, dir: vec3<f32>) -> vec4<f32> {
+        // Positional encoding for position (10 levels) and direction (4 levels)
+        let pos_encoded = positionalEncoding(pos, 10);
+        let dir_encoded = positionalEncoding(dir, 4);
+        
+        // Combine position and direction (simplified - in practice they're processed separately)
+        var input: array<f32, 6>;
+        input[0] = pos.x; input[1] = pos.y; input[2] = pos.z;
+        input[3] = dir.x; input[4] = dir.y; input[5] = dir.z;
+        
+        // Layer 1: 6 -> 512
+        var layer1_out: array<f32, 512>;
+        for (var i = 0; i < 512; i++) {
+          var sum = weights.bias1[i];
+          for (var j = 0; j < 6; j++) {
+            sum += input[j] * weights.layer1[i * 6 + j];
+          }
+          layer1_out[i] = relu(sum);
+        }
+        
+        // Layer 2: 512 -> 512
+        var layer2_out: array<f32, 512>;
+        for (var i = 0; i < 512; i++) {
+          var sum = weights.bias2[i];
+          for (var j = 0; j < 512; j++) {
+            sum += layer1_out[j] * weights.layer2[i * 512 + j];
+          }
+          layer2_out[i] = relu(sum);
+        }
+        
+        // Layer 3: 512 -> 512
+        var layer3_out: array<f32, 512>;
+        for (var i = 0; i < 512; i++) {
+          var sum = weights.bias3[i];
+          for (var j = 0; j < 512; j++) {
+            sum += layer2_out[j] * weights.layer3[i * 512 + j];
+          }
+          layer3_out[i] = relu(sum);
+        }
+        
+        // Output layer: 512 -> 4 (RGBA)
+        var output: array<f32, 4>;
+        for (var i = 0; i < 4; i++) {
+          var sum = weights.bias4[i];
+          for (var j = 0; j < 512; j++) {
+            sum += layer3_out[j] * weights.layer4[i * 512 + j];
+          }
+          if (i < 3) {
+            output[i] = sigmoid(sum); // RGB values
+          } else {
+            output[i] = relu(sum);    // Alpha/density
+          }
+        }
+        
+        return vec4<f32>(output[0], output[1], output[2], output[3]);
+      }
+      
+      fn rayMarch(rayOrigin: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
+        var color = vec3<f32>(0.0);
+        var transmittance = 1.0;
+        
+        let tMin = 0.1;
+        let tMax = 6.0;
+        let numSamples = 64;
+        let stepSize = (tMax - tMin) / f32(numSamples);
+        
+        for (var i = 0; i < numSamples; i++) {
+          let t = tMin + f32(i) * stepSize;
+          let samplePos = rayOrigin + rayDir * t;
+          
+          // Query NeRF network
+          let nerfOutput = nerfNetwork(samplePos, rayDir);
+          let sampleColor = nerfOutput.rgb;
+          let density = nerfOutput.a;
+          
+          // Volume rendering equation
+          let alpha = 1.0 - exp(-density * stepSize);
+          color += transmittance * alpha * sampleColor;
+          transmittance *= (1.0 - alpha);
+          
+          // Early termination if transmittance is low
+          if (transmittance < 0.01) {
+            break;
+          }
+        }
+        
+        return color;
+      }
       
       @fragment
       fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-        // Simple NeRF-style ray marching
-        let rayDir = normalize(vec3<f32>(uv * 2.0 - 1.0, 1.0));
+        // Convert UV to normalized device coordinates
+        let ndc = uv * 2.0 - 1.0;
         
-        // Sample color based on ray direction and time
-        let color = vec3<f32>(
-          0.5 + 0.5 * sin(uniforms.time + rayDir.x * 3.14159),
-          0.5 + 0.5 * sin(uniforms.time + rayDir.y * 3.14159 + 2.094),
-          0.5 + 0.5 * sin(uniforms.time + rayDir.z * 3.14159 + 4.188)
-        );
+        // Create ray from camera
+        let invView = transpose(uniforms.viewMatrix);
+        let invProj = transpose(uniforms.projMatrix);
+        
+        // Ray origin (camera position)
+        let rayOrigin = (invView * vec4<f32>(0.0, 0.0, 0.0, 1.0)).xyz;
+        
+        // Ray direction
+        let rayClip = vec4<f32>(ndc.x, ndc.y, 1.0, 1.0);
+        let rayEye = invProj * rayClip;
+        let rayWorld = (invView * vec4<f32>(rayEye.xy, -1.0, 0.0)).xyz;
+        let rayDir = normalize(rayWorld);
+        
+        // Ray march through NeRF
+        let color = rayMarch(rayOrigin, rayDir);
         
         return vec4<f32>(color, 1.0);
       }

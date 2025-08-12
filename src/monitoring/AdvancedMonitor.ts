@@ -1,5 +1,6 @@
 /**
  * Advanced monitoring and telemetry system for NeRF SDK
+ * Enhanced for Generation 2: MAKE IT ROBUST
  */
 
 export interface MetricPoint {
