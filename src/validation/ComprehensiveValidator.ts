@@ -1,5 +1,6 @@
 /**
- * Comprehensive validation system for NeRF SDK inputs and states
+ * Comprehensive validation system with robust error handling and security checks
+ * Enhanced for Generation 2: MAKE IT ROBUST
  */
 
 export interface ValidationRule<T> {
