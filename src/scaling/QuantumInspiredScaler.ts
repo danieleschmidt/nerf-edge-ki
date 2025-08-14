@@ -225,7 +225,7 @@ export class QuantumInspiredScaler {
     isActive: boolean;
     currentMetrics: ScalingMetrics | null;
     resourceNodes: ResourceNode[];
-    quantumState: typeof this.quantumState;
+    quantumState: { coherence: number; entanglement: number; superposition: number };
     scalingEffectiveness: number;
     recommendations: string[];
   } {
@@ -371,7 +371,7 @@ export class QuantumInspiredScaler {
   /**
    * Calculate quantum fitness for a resource node
    */
-  private calculateQuantumFitness(node: ResourceNode, task: any): number {
+  private calculateQuantumFitness(node: ResourceNode, _task: any): number {
     const capacityFactor = (node.capacity - node.currentLoad) / node.capacity;
     const efficiencyFactor = node.efficiency;
     const latencyFactor = 1.0 / (1.0 + node.latency / 100); // Lower latency = higher score

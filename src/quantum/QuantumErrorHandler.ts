@@ -3,6 +3,10 @@
  * Implements quantum-inspired error recovery and fault tolerance
  */
 
+// Global Node.js/Browser compatibility declarations
+declare const process: { env: Record<string, string | undefined>; platform: string };
+declare const global: any;
+
 import { EventEmitter } from 'events';
 
 export interface QuantumError {
@@ -246,7 +250,7 @@ export class QuantumErrorHandler extends EventEmitter {
       maxRetries: 3,
       cooldownMs: 1000,
       quantumCorrection: true,
-      recoveryFunction: async (error) => {
+      recoveryFunction: async (_error) => {
         console.log('🔄 Attempting decoherence recovery...');
         
         // Simulate quantum state reinitialization
@@ -268,7 +272,7 @@ export class QuantumErrorHandler extends EventEmitter {
       maxRetries: 2,
       cooldownMs: 2000,
       quantumCorrection: true,
-      recoveryFunction: async (error) => {
+      recoveryFunction: async (_error) => {
         console.log('🔗 Attempting entanglement repair...');
         
         // Try to re-establish broken entanglements
@@ -291,7 +295,7 @@ export class QuantumErrorHandler extends EventEmitter {
       maxRetries: 3,
       cooldownMs: 500,
       quantumCorrection: true,
-      recoveryFunction: async (error) => {
+      recoveryFunction: async (_error) => {
         console.log('🌀 Attempting superposition restoration...');
         
         // Create new superposition state
@@ -312,7 +316,7 @@ export class QuantumErrorHandler extends EventEmitter {
       priority: 6,
       maxRetries: 2,
       cooldownMs: 5000,
-      recoveryFunction: async (error) => {
+      recoveryFunction: async (_error) => {
         console.log('🌡️ Restarting quantum annealing...');
         
         // Restart annealing with adjusted parameters
@@ -337,7 +341,7 @@ export class QuantumErrorHandler extends EventEmitter {
       priority: 8,
       maxRetries: 1,
       cooldownMs: 3000,
-      recoveryFunction: async (error) => {
+      recoveryFunction: async (_error) => {
         console.log('💾 Attempting resource optimization...');
         
         // Simulate garbage collection and resource cleanup
@@ -367,7 +371,7 @@ export class QuantumErrorHandler extends EventEmitter {
       priority: 9,
       maxRetries: 1,
       cooldownMs: 1000,
-      recoveryFunction: async (error) => {
+      recoveryFunction: async (_error) => {
         console.log('🔄 Resolving dependency cycle...');
         
         const cycle = error.context.cycle || [];

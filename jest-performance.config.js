@@ -1,7 +1,9 @@
 /** @type {import('jest').Config} */
-module.exports = {
+import jestConfig from './jest.config.js';
+
+const config = {
   // Extend base Jest config
-  ...require('./jest.config.js'),
+  ...jestConfig,
   
   // Performance test specific configuration
   displayName: 'Performance Tests',
@@ -55,7 +57,9 @@ module.exports = {
   
   // Module name mapping for performance utilities
   moduleNameMapping: {
-    ...require('./jest.config.js').moduleNameMapping,
+    ...jestConfig.moduleNameMapping,
     '^@perf/(.*)$': '<rootDir>/web/tests/performance/$1',
   },
 };
+
+export default config;

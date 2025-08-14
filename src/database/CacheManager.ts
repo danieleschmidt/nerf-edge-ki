@@ -2,6 +2,9 @@
  * Advanced caching system for NeRF models and rendering data
  */
 
+// Global timer functions for Node.js/Browser compatibility
+declare const clearTimeout: (timeoutId: NodeJS.Timeout | number) => void;
+
 export interface CacheEntry<T> {
   key: string;
   data: T;

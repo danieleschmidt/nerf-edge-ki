@@ -227,7 +227,7 @@ export class ErrorHandler {
   /**
    * Use fallback mechanisms
    */
-  private async useFallback(error: NerfError, strategy: RecoveryStrategy): Promise<boolean> {
+  private async useFallback(_error: NerfError, strategy: RecoveryStrategy): Promise<boolean> {
     const fallbacks = strategy.fallbackOptions || [];
     
     for (const fallback of fallbacks) {
@@ -265,7 +265,7 @@ export class ErrorHandler {
   /**
    * Graceful performance degradation
    */
-  private async degradePerformance(error: NerfError, strategy: RecoveryStrategy): Promise<boolean> {
+  private async degradePerformance(_error: NerfError, strategy: RecoveryStrategy): Promise<boolean> {
     const degradationLevel = strategy.degradationLevel || 0.5;
     
     console.log(`📉 Degrading performance by ${(1 - degradationLevel) * 100}%`);
@@ -487,7 +487,7 @@ export class ErrorHandler {
   
   private getCircuitBreakerThreshold(category: ErrorCategory): number {
     switch (category) {
-      case ErrorCategory.CRITICAL: return 1;
+      case ErrorCategory.RENDERING: return 1;
       case ErrorCategory.WEBGPU: return 3;
       case ErrorCategory.NEURAL_NETWORK: return 5;
       case ErrorCategory.QUANTUM: return 3;
@@ -621,7 +621,7 @@ export class RemoteErrorReporter implements ErrorReporter {
       // Would send to actual monitoring service
       console.log(`📡 Reporting error ${error.id} to ${this.endpoint}`);
       
-      const payload = {
+      const _payload = {
         ...error,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         timestamp: new Date(error.timestamp).toISOString()

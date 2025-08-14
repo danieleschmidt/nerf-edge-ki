@@ -1,0 +1,102 @@
+# Multi-stage production Dockerfile for NeRF Edge Kit
+FROM node:18-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    linux-headers \
+    curl \
+    ca-certificates
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Development stage for building
+FROM base AS development
+RUN npm ci --include=dev
+
+# Copy source code
+COPY src/ ./src/
+COPY web/ ./web/
+COPY tests/ ./tests/
+COPY benchmarks/ ./benchmarks/
+COPY *.config.js ./
+
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    curl \
+    ca-certificates \
+    dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from development stage
+COPY --from=development --chown=nextjs:nodejs /app/dist ./dist
+COPY --from=development --chown=nextjs:nodejs /app/web/dist ./web/dist
+
+# Copy production configuration
+COPY --chown=nextjs:nodejs .env.production ./.env
+COPY --chown=nextjs:nodejs nginx.conf ./
+COPY --chown=nextjs:nodejs monitoring/ ./monitoring/
+
+# Create necessary directories
+RUN mkdir -p logs cache ssl && \
+    chown -R nextjs:nodejs logs cache ssl
+
+# Health check script
+COPY --chown=nextjs:nodejs <<'EOF' /app/healthcheck.js
+const http = require('http');
+const options = {
+  host: 'localhost',
+  port: process.env.PORT || 8080,
+  path: '/health',
+  timeout: 2000,
+};
+const request = http.request(options, (res) => {
+  console.log(`STATUS: ${res.statusCode}`);
+  process.exitCode = (res.statusCode === 200) ? 0 : 1;
+  process.exit();
+});
+request.on('error', (err) => {
+  console.log('ERROR', err);
+  process.exit(1);
+});
+request.end();
+EOF
+
+# Expose ports
+EXPOSE 8080 8443
+
+# Switch to non-root user
+USER nextjs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD node /app/healthcheck.js
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "dist/server.js"]

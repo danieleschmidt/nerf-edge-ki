@@ -344,7 +344,7 @@ export class NerfRenderer {
     };
   }
   
-  private createViewMatrix(options: RenderOptions): number[] {
+  private createViewMatrix(_options: RenderOptions): number[] {
     // Simplified view matrix creation
     return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
   }
@@ -363,7 +363,7 @@ export class NerfRenderer {
     ];
   }
   
-  private async renderModel(sceneModel: any, options: RenderOptions): Promise<void> {
+  private async renderModel(_sceneModel: any, _options: RenderOptions): Promise<void> {
     // Model-specific rendering logic would go here
     this.renderStats.trianglesRendered += 1000; // Mock value
   }

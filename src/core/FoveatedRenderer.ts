@@ -103,7 +103,7 @@ export class FoveatedRenderer {
     
     const centerRadius = this.settings.centerRadius;
     const peripheralRadius = this.settings.peripheralRadius;
-    const blendWidth = this.settings.blendWidth;
+    const _blendWidth = this.settings.blendWidth;
     
     if (distance <= centerRadius) {
       // Full quality in center

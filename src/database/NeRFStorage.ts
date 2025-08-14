@@ -2,6 +2,9 @@
  * NeRF model storage and caching system with IndexedDB backend
  */
 
+// Global IndexedDB for browser compatibility
+declare const indexedDB: IDBFactory;
+
 export interface StoredModel {
   id: string;
   name: string;

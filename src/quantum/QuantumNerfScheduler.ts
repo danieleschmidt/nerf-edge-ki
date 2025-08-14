@@ -3,6 +3,9 @@
  * Optimizes NeRF rendering pipeline using quantum task planning
  */
 
+// Node.js process compatibility
+declare const process: { env: Record<string, string | undefined>; platform: string };
+
 import { QuantumTaskPlanner, QuantumTask, ResourceRequirements } from './QuantumTaskPlanner';
 import { NerfConfig, RenderOptions, PerformanceMetrics } from '../core/types';
 import { EventEmitter } from 'events';
@@ -391,7 +394,7 @@ export class QuantumNerfScheduler extends EventEmitter {
     }
   }
 
-  private findRelatedRenderingTasks(renderTask: NerfRenderTask): NerfRenderTask[] {
+  private findRelatedRenderingTasks(_renderTask: NerfRenderTask): NerfRenderTask[] {
     // Implementation would find tasks with similar characteristics
     // For now, return empty array
     return [];

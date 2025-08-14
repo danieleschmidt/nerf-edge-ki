@@ -39,7 +39,7 @@ Object.defineProperty(global, 'performance', {
 });
 
 // Mock Canvas and WebGL contexts
-HTMLCanvasElement.prototype.getContext = jest.fn((contextType) => {
+HTMLCanvasElement.prototype.getContext = jest.fn((contextType: string) => {
   if (contextType === 'webgpu') {
     return {
       configure: jest.fn(),
@@ -48,8 +48,46 @@ HTMLCanvasElement.prototype.getContext = jest.fn((contextType) => {
       }),
     };
   }
+  if (contextType === '2d') {
+    return {
+      canvas: {} as HTMLCanvasElement,
+      globalAlpha: 1,
+      globalCompositeOperation: 'source-over',
+      drawImage: jest.fn(),
+      fillRect: jest.fn(),
+      clearRect: jest.fn(),
+      getImageData: jest.fn(),
+      putImageData: jest.fn(),
+      createImageData: jest.fn(),
+      setTransform: jest.fn(),
+      resetTransform: jest.fn(),
+      scale: jest.fn(),
+      rotate: jest.fn(),
+      translate: jest.fn(),
+      transform: jest.fn(),
+      save: jest.fn(),
+      restore: jest.fn(),
+      beginPath: jest.fn(),
+      closePath: jest.fn(),
+      moveTo: jest.fn(),
+      lineTo: jest.fn(),
+      arc: jest.fn(),
+      arcTo: jest.fn(),
+      ellipse: jest.fn(),
+      rect: jest.fn(),
+      stroke: jest.fn(),
+      fill: jest.fn(),
+      clip: jest.fn(),
+      isPointInPath: jest.fn(),
+      isPointInStroke: jest.fn(),
+      createLinearGradient: jest.fn(),
+      createRadialGradient: jest.fn(),
+      createPattern: jest.fn(),
+      measureText: jest.fn().mockReturnValue({ width: 0 }),
+    } as any;
+  }
   return null;
-});
+}) as any;
 
 // Custom matchers for NeRF testing
 expect.extend({
@@ -83,6 +121,10 @@ expect.extend({
 
 // Global test timeout for performance tests
 jest.setTimeout(10000);
+
+// Polyfill TextEncoder/TextDecoder for Node.js environment
+global.TextEncoder = global.TextEncoder || require('util').TextEncoder;
+global.TextDecoder = global.TextDecoder || require('util').TextDecoder;
 
 // Mock console methods in tests but preserve in CI
 if (process.env.NODE_ENV === 'test' && !process.env.CI) {

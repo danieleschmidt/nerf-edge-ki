@@ -676,7 +676,7 @@ export class ComprehensiveMonitor {
     }
   }
 
-  private async exportToEndpoints(snapshot: MetricsSnapshot): Promise<void> {
+  private async exportToEndpoints(_snapshot: MetricsSnapshot): Promise<void> {
     for (const endpoint of this.config.export.endpoints) {
       try {
         const data = await this.exportMetrics();

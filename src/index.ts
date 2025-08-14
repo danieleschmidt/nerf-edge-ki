@@ -124,9 +124,9 @@ export const VERSION = '1.0.0';
  * Global SDK instance for easier usage
  */
 let globalSDK: {
-  renderer: NerfRenderer | null;
-  service: NerfService | null;
-  performance: PerformanceService | null;
+  renderer: InstanceType<typeof NerfRenderer> | null;
+  service: InstanceType<typeof NerfService> | null;
+  performance: InstanceType<typeof PerformanceService> | null;
 } = {
   renderer: null,
   service: null,
@@ -136,7 +136,7 @@ let globalSDK: {
 /**
  * Initialize the NeRF Edge Kit with comprehensive setup
  */
-export async function initialize(config?: Partial<NerfConfig>): Promise<{
+export async function initialize(config?: Partial<import('./core/types').NerfConfig>): Promise<{
   renderer: NerfRenderer;
   service: NerfService;
   performance: PerformanceService;
@@ -149,7 +149,7 @@ export async function initialize(config?: Partial<NerfConfig>): Promise<{
     const performance = new PerformanceService();
     
     // Create renderer with config
-    const defaultConfig: NerfConfig = {
+    const defaultConfig: import('./core/types').NerfConfig = {
       targetFPS: 60,
       maxResolution: [1920, 1080],
       foveatedRendering: false,

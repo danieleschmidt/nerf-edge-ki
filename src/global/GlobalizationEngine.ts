@@ -603,7 +603,7 @@ export class GlobalizationEngine {
     }
   }
 
-  private async applyRegionalOptimizations(localeCode: string): Promise<void> {
+  private async applyRegionalOptimizations(_localeCode: string): Promise<void> {
     if (this.config.regionalOptimizations) {
       const locale = this.getCurrentLocaleData();
       if (locale) {
@@ -630,15 +630,15 @@ export class GlobalizationEngine {
     return recommendations;
   }
 
-  private async applyNetworkOptimizations(optimizations: any): Promise<void> {
+  private async applyNetworkOptimizations(_optimizations: any): Promise<void> {
     // Apply network-specific optimizations (CDN, compression, etc.)
   }
 
-  private async applyDeviceOptimizations(optimizations: any): Promise<void> {
+  private async applyDeviceOptimizations(_optimizations: any): Promise<void> {
     // Apply device-specific optimizations
   }
 
-  private async applyCulturalAdaptations(adaptations: any): Promise<void> {
+  private async applyCulturalAdaptations(_adaptations: any): Promise<void> {
     // Apply cultural adaptations (colors, imagery, content)
   }
 
@@ -778,7 +778,7 @@ class RegionOptimizer {
     // Initialize regional optimization data
   }
 
-  async getOptimizations(region: string): Promise<any> {
+  async getOptimizations(_region: string): Promise<any> {
     // Mock regional optimizations
     return {
       network: { cdn: 'cloudflare', compression: 'brotli' },
@@ -787,7 +787,7 @@ class RegionOptimizer {
     };
   }
 
-  async applyOptimizations(region: string): Promise<void> {
+  async applyOptimizations(_region: string): Promise<void> {
     // Apply region-specific optimizations
   }
 }
