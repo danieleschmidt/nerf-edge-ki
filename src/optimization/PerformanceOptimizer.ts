@@ -9,7 +9,7 @@
  * 5. Auto-scaling triggers and performance scaling
  */
 
-import { NerfConfig, PerformanceMetrics, RenderOptions } from '../core/types';
+import { PerformanceMetrics } from '../core/types';
 import { ErrorHandler, ErrorSeverity, ErrorCategory } from '../core/ErrorHandler';
 import { SystemMonitor, ComponentHealth } from '../monitoring/SystemMonitor';
 

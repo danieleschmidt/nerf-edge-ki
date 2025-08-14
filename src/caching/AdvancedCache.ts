@@ -11,7 +11,7 @@ export interface CacheEntry<T> {
   lastAccessed: number;
   size: number;
   priority: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CacheLayerConfig {
@@ -161,7 +161,7 @@ export class AdvancedCache {
     layerHint?: string;
     priority?: number;
     ttl?: number;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     const dataSize = this.estimateSize(data);
     const targetLayer = this.selectOptimalLayer(dataSize, options?.layerHint);
@@ -175,7 +175,7 @@ export class AdvancedCache {
         lastAccessed: Date.now(),
         size: dataSize,
         priority: options?.priority || 1,
-        metadata: options?.metadata
+        metadata: options?.metadata || {}
       };
 
       await targetLayer.set(key, entry, options?.ttl);
@@ -189,7 +189,7 @@ export class AdvancedCache {
   async invalidate(pattern: string | RegExp): Promise<number> {
     let invalidatedCount = 0;
 
-    for (const [layerId, layer] of this.layers) {
+    for (const [, layer] of this.layers) {
       const count = await layer.invalidate(pattern);
       invalidatedCount += count;
     }
@@ -271,7 +271,7 @@ export class AdvancedCache {
     const sourcePriority = layerPriority[sourceLayerId as keyof typeof layerPriority];
 
     // Promote to all faster layers
-    for (const [layerId, layer] of this.layers) {
+    for (const [layerId] of this.layers) {
       const targetPriority = layerPriority[layerId as keyof typeof layerPriority];
       if (targetPriority < sourcePriority) {
         await this.set(key, data, { layerHint: layerId, priority: 10 });
@@ -289,11 +289,11 @@ export class AdvancedCache {
 
     // Select based on data size and layer characteristics
     if (dataSize < 1024 * 1024) { // < 1MB
-      return this.layers.get('gpu') || this.layers.get('memory');
+      return this.layers.get('gpu') || this.layers.get('memory') || null;
     } else if (dataSize < 100 * 1024 * 1024) { // < 100MB
-      return this.layers.get('memory') || this.layers.get('disk');
+      return this.layers.get('memory') || this.layers.get('disk') || null;
     } else {
-      return this.layers.get('disk');
+      return this.layers.get('disk') || null;
     }
   }
 
@@ -407,14 +407,14 @@ export class AdvancedCache {
     };
 
     for (const layer of this.layers.values()) {
-      const layerPatterns = await layer.analyzePatterns();
+      await layer.analyzePatterns();
       // Merge patterns
     }
 
     return patterns;
   }
 
-  private async adjustLayerConfigurations(patterns: any): Promise<void> {
+  private async adjustLayerConfigurations(_patterns: any): Promise<void> {
     // Adjust cache sizes based on usage patterns
     // This would implement dynamic cache sizing
   }
@@ -613,13 +613,13 @@ class CacheLayer {
           .sort(([, a], [, b]) => a - b)[0][0];
         break;
       case 'fifo':
-        keyToEvict = this.entries.keys().next().value;
+        keyToEvict = this.entries.keys().next().value || '';
         break;
       case 'adaptive':
         keyToEvict = this.selectAdaptiveEviction();
         break;
       default:
-        keyToEvict = this.entries.keys().next().value;
+        keyToEvict = this.entries.keys().next().value || '';
     }
 
     const entry = this.entries.get(keyToEvict);

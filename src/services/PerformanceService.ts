@@ -340,8 +340,8 @@ export class PerformanceService {
     profile: PerformanceProfile;
     metrics: PerformanceMetrics[];
     benchmarks: BenchmarkResult[];
-    stats: ReturnType<typeof this.getCurrentStats>;
-    percentiles: ReturnType<typeof this.getPercentiles>;
+    stats: { current: PerformanceMetrics; averages: PerformanceMetrics; target: PerformanceTarget; meetingTargets: boolean };
+    percentiles: { fps: { p50: number; p95: number; p99: number }; frameTime: { p50: number; p95: number; p99: number } };
     recommendations: string[];
   } {
     return {

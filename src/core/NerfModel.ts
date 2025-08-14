@@ -144,11 +144,11 @@ export class NerfModel {
    */
   static createMockModel(): NerfModel {
     const model = new NerfModel();
-    const mockWeights = new Float32Array(65536); // 256KB of mock weights
+    const mockWeights = new Float32Array(1024); // 4KB of mock weights
     mockWeights.fill(0.5); // Initialize with reasonable values
     
     // Create mock binary data
-    const buffer = new ArrayBuffer(65536 + 100); // weights + headers
+    const buffer = new ArrayBuffer(1024 * 4 + 100); // weights + headers
     const view = new DataView(buffer);
     
     // Write header

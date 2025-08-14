@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  nerf-edge-kit:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      args:
+        NODE_ENV: production
+        BUILD_TARGET: production
+    image: nerf-edge-kit:production
+    container_name: nerf-edge-kit-prod
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - HTTPS_PORT=8443
+      - ENABLE_HTTPS=true
+    env_file:
+      - .env.production
+    volumes:
+      - ./ssl:/app/ssl:ro
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+    networks:
+      - nerf-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nerf.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.nerf.entrypoints=websecure"
+      - "traefik.http.routers.nerf.tls.certresolver=letsencrypt"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nerf-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./static:/usr/share/nginx/html:ro
+    depends_on:
+      - nerf-edge-kit
+    networks:
+      - nerf-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: nerf-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - nerf-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus
+    container_name: nerf-prometheus-prod
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - nerf-network
+
+  grafana:
+    image: grafana/grafana
+    container_name: nerf-grafana-prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=your-secure-password
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - nerf-network
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  nerf-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

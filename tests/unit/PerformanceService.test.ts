@@ -2,7 +2,7 @@
  * Unit tests for PerformanceService
  */
 
-import { PerformanceService, PerformanceProfile, BenchmarkResult } from '../../src/services/PerformanceService';
+import { PerformanceService } from '../../src/services/PerformanceService';
 import { PerformanceMetrics } from '../../src/core/types';
 
 describe('PerformanceService', () => {
@@ -19,9 +19,9 @@ describe('PerformanceService', () => {
   describe('initialization', () => {
     it('should initialize with default profile', () => {
       // Assert
-      const stats = service.getCurrentStats();
-      expect(stats.target).toBeDefined();
-      expect(stats.target.fps).toBeGreaterThan(0);
+      const currentStats = service.getCurrentStats();
+      expect(currentStats.target).toBeDefined();
+      expect(currentStats.target.fps).toBeGreaterThan(0);
     });
 
     it('should get all device profiles', () => {
@@ -43,20 +43,20 @@ describe('PerformanceService', () => {
     it('should set performance profile', () => {
       // Act
       service.setProfile('vision-pro');
-      const stats = service.getCurrentStats();
+      const currentStats = service.getCurrentStats();
 
       // Assert
-      expect(stats.target.fps).toBe(90);
-      expect(stats.target.powerLimit).toBe(8.0);
+      expect(currentStats.target.fps).toBe(90);
+      expect(currentStats.target.powerLimit).toBe(8.0);
     });
 
     it('should handle invalid profile name', () => {
       // Act
       service.setProfile('invalid-profile');
-      const stats = service.getCurrentStats();
+      const currentStats = service.getCurrentStats();
 
       // Assert - should still have valid target (fallback to default)
-      expect(stats.target).toBeDefined();
+      expect(currentStats.target).toBeDefined();
     });
   });
 
@@ -81,8 +81,8 @@ describe('PerformanceService', () => {
           
           // Assert
           expect(mockMetricsProvider).toHaveBeenCalled();
-          const stats = service.getCurrentStats();
-          expect(stats.current.fps).toBe(60);
+          const currentStats = service.getCurrentStats();
+          expect(currentStats.current.fps).toBe(60);
           resolve();
         }, 150);
       });
@@ -100,10 +100,10 @@ describe('PerformanceService', () => {
 
       // Act
       service.recordMetrics(metrics);
-      const stats = service.getCurrentStats();
+      const currentStats = service.getCurrentStats();
 
       // Assert
-      expect(stats.current).toEqual(metrics);
+      expect(currentStats.current).toEqual(metrics);
     });
 
     it('should calculate running averages', () => {
@@ -127,11 +127,11 @@ describe('PerformanceService', () => {
       // Act
       service.recordMetrics(metrics1);
       service.recordMetrics(metrics2);
-      const stats = service.getCurrentStats();
+      const currentStats = service.getCurrentStats();
 
       // Assert
-      expect(stats.averages.fps).toBe(70); // (60 + 80) / 2
-      expect(stats.averages.memoryUsage).toBe(250); // (200 + 300) / 2
+      expect(currentStats.averages.fps).toBe(70); // (60 + 80) / 2
+      expect(currentStats.averages.memoryUsage).toBe(250); // (200 + 300) / 2
     });
   });
 
@@ -235,10 +235,10 @@ describe('PerformanceService', () => {
       service.recordMetrics(poorMetrics);
 
       // Act
-      const stats = service.getCurrentStats();
+      const currentStats = service.getCurrentStats();
 
       // Assert
-      expect(stats.meetingTargets).toBe(false);
+      expect(currentStats.meetingTargets).toBe(false);
     });
   });
 
@@ -273,7 +273,7 @@ describe('PerformanceService', () => {
     it('should clear performance history', () => {
       // Act
       service.clearHistory();
-      const stats = service.getCurrentStats();
+      service.getCurrentStats();
       const exportedData = service.exportData();
 
       // Assert

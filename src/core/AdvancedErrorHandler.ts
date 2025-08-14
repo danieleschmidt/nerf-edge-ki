@@ -112,7 +112,7 @@ export class AdvancedErrorHandler {
       timestamp: Date.now(),
       component: 'unknown',
       operation: 'unknown',
-      stackTrace: error.stack,
+      ...(error.stack && { stackTrace: error.stack }),
       userAgent: navigator.userAgent,
       deviceInfo: this.getDeviceInfo(),
       ...context
@@ -237,7 +237,7 @@ export class AdvancedErrorHandler {
     this.recoveryStrategies.push({
       name: 'webgpu-reinit',
       canRecover: (error) => error.context.category === ErrorCategory.WEBGPU,
-      recover: async (error) => {
+      recover: async (_error) => {
         // Would reinitialize WebGPU backend
         console.log('Attempting to reinitialize WebGPU backend');
         await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
@@ -250,7 +250,7 @@ export class AdvancedErrorHandler {
     this.recoveryStrategies.push({
       name: 'memory-cleanup',
       canRecover: (error) => error.context.category === ErrorCategory.MEMORY,
-      recover: async (error) => {
+      recover: async (_error) => {
         console.log('Attempting memory cleanup');
         
         // Force garbage collection if available
@@ -286,7 +286,7 @@ export class AdvancedErrorHandler {
     this.recoveryStrategies.push({
       name: 'quality-fallback',
       canRecover: (error) => error.context.category === ErrorCategory.RENDERING,
-      recover: async (error) => {
+      recover: async (_error) => {
         console.log('Falling back to lower quality settings');
         
         // Would reduce rendering quality

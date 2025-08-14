@@ -98,7 +98,7 @@ describe('Full Stack Integration Tests', () => {
       
       // Create and load mock model
       const model = NerfModel.createMockModel();
-      await mockScene.addModel(model, { id: 'test-model' });
+      mockScene.addModel('test-model', model);
       
       // Set scene
       renderer.setScene(mockScene);
@@ -124,7 +124,7 @@ describe('Full Stack Integration Tests', () => {
       // Add multiple models to create load
       for (let i = 0; i < 5; i++) {
         const model = NerfModel.createMockModel();
-        await mockScene.addModel(model, { id: `model-${i}` });
+        mockScene.addModel(`model-${i}`, model);
       }
       
       renderer.setScene(mockScene);
@@ -479,7 +479,7 @@ describe('Full Stack Integration Tests', () => {
       for (let i = 0; i < 15; i++) {
         const model = NerfModel.createMockModel();
         models.push(model);
-        await scene.addModel(model, { id: `memory-test-${i}` });
+        scene.addModel(`memory-test-${i}`, model);
       }
 
       const memoryUsage = scene.getMemoryUsage();
@@ -520,7 +520,7 @@ describe('Full Stack Integration Tests', () => {
 
         const config = {
           targetFPS: scenario.platform === 'iPhone' ? 60 : 90,
-          maxResolution: scenario.platform === 'iPhone' ? [1080, 1920] : [1920, 1080],
+          maxResolution: scenario.platform === 'iPhone' ? [1080, 1920] as [number, number] : [1920, 1080] as [number, number],
           powerMode: scenario.platform === 'iPhone' ? 'balanced' : 'performance' as const
         };
 

@@ -3,6 +3,8 @@
  * Enhanced for Generation 2: MAKE IT ROBUST
  */
 
+import '../core/types'; // Import for WebGPU type declarations
+
 export interface ValidationRule<T> {
   name: string;
   validate: (value: T) => ValidationResult;

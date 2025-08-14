@@ -423,7 +423,7 @@ export class QuantumCache<T = any> extends EventEmitter {
   }
 
   private cleanupExpired(): void {
-    const now = Date.now();
+    const _now = Date.now();
     let cleaned = 0;
 
     for (const [key, entry] of this.cache.entries()) {

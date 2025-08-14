@@ -594,7 +594,7 @@ export class AdvancedCacheManager<T> {
    * Clean up expired entries
    */
   private cleanupExpired(): void {
-    const now = Date.now();
+    const _now = Date.now();
     const keysToDelete: string[] = [];
 
     for (const [key, entry] of this.cache.entries()) {

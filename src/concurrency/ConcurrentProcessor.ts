@@ -314,7 +314,7 @@ export class ConcurrentProcessor {
     const worker = this.getAvailableWorker();
     if (!worker) return;
 
-    const startTime = performance.now();
+    performance.now();
     this.activeTasks.set(task.id, task);
     this.workerPool.activeWorkers++;
     this.workerPool.queuedTasks = this.taskQueue.length;
@@ -472,9 +472,9 @@ export class ConcurrentProcessor {
   // Mock NeRF processing functions (would be replaced with actual implementations)
 
   private async processNerfInference(
-    position: Float32Array,
-    direction: Float32Array,
-    modelId: string
+    _position: Float32Array,
+    _direction: Float32Array,
+    _modelId: string
   ): Promise<Float32Array> {
     // Mock NeRF inference
     await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
@@ -483,7 +483,7 @@ export class ConcurrentProcessor {
 
   private async processRayMarchingChunk(
     rays: { origin: Float32Array; direction: Float32Array }[],
-    config: { samples: number; bounds: [number, number] }
+    _config: { samples: number; bounds: [number, number] }
   ): Promise<Float32Array[]> {
     // Mock ray marching
     await new Promise(resolve => setTimeout(resolve, Math.random() * 50));
@@ -492,7 +492,7 @@ export class ConcurrentProcessor {
 
   private async optimizeLayerWeights(
     weights: Float32Array,
-    params: any
+    _params: any
   ): Promise<Float32Array> {
     // Mock weight optimization
     await new Promise(resolve => setTimeout(resolve, Math.random() * 100));

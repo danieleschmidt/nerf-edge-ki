@@ -3,8 +3,7 @@
  * Generation 1 Enhancement: Simplified but powerful NeRF rendering
  */
 
-import { NerfRenderer, FoveationConfig, RenderStats } from '../rendering/NerfRenderer';
-import { NerfScene } from './NerfScene';
+import { NerfRenderer, FoveationConfig } from '../rendering/NerfRenderer';
 import { PerformanceMetrics, RenderOptions } from './types';
 
 export interface AdaptiveRenderingConfig {
@@ -165,7 +164,7 @@ export class EnhancedNerfRenderer extends NerfRenderer {
    * Generate smart quality map for foveated rendering
    */
   private generateSmartQualityMap(gazeCenter: { x: number; y: number; confidence: number }): Float32Array {
-    const { levels, centerRadius, blendWidth } = this.smartFoveation;
+    const { centerRadius, blendWidth } = this.smartFoveation;
     const width = 64; // Quality map resolution
     const height = 64;
     const qualityMap = new Float32Array(width * height);

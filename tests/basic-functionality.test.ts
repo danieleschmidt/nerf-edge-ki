@@ -37,7 +37,7 @@ describe('Basic NeRF Functionality', () => {
     });
 
     const model = NerfModel.createMockModel();
-    await scene.addModel(model, { id: 'test-model' });
+    scene.addModel('test-model', model);
     
     expect(scene.getModels().length).toBe(1);
     expect(scene.getModel('test-model')).toBeDefined();

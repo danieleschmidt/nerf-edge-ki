@@ -60,7 +60,7 @@ export {
 } from './ResearchIntegrationHub';
 
 // Demo System
-export { ResearchIntegrationDemo } from '../examples/research-integration-demo';
+export { ResearchIntegrationDemo } from '../../examples/research-integration-demo';
 
 // Version information
 export const RESEARCH_VERSION = '1.0.0';

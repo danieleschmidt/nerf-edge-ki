@@ -3,13 +3,15 @@
  */
 
 import { NerfModel } from './NerfModel';
-import { SpatialTransform, RenderOptions } from './types';
+import { SpatialTransform } from './types';
 
 export interface SceneConfig {
   /** Scene name */
   name: string;
   /** Scene description */
   description?: string;
+  /** Maximum number of models in scene */
+  maxModels?: number;
   /** Global lighting parameters */
   lighting: {
     ambient: [number, number, number];
@@ -319,7 +321,7 @@ export class NerfScene {
    * Optimize scene by removing invisible or distant models
    */
   optimizeForCamera(cameraPosition: [number, number, number], maxDistance: number = 50): void {
-    for (const [id, sceneModel] of this.models.entries()) {
+    for (const [_id, sceneModel] of this.models.entries()) {
       const modelPos = sceneModel.transform.position;
       const distance = Math.sqrt(
         Math.pow(cameraPosition[0] - modelPos[0], 2) +
