@@ -26,10 +26,10 @@ export interface ErrorContext {
   timestamp: number;
   component: string;
   operation: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   stackTrace?: string;
   userAgent?: string;
-  deviceInfo?: any;
+  deviceInfo?: unknown;
 }
 
 export interface RecoveryStrategy {
@@ -41,7 +41,7 @@ export interface RecoveryStrategy {
 
 export class NerfError extends Error {
   public readonly context: ErrorContext;
-  public readonly originalError?: Error;
+  public readonly originalError?: Error | undefined;
   public attempts = 0;
 
   constructor(message: string, context: ErrorContext, originalError?: Error) {
@@ -51,7 +51,7 @@ export class NerfError extends Error {
     this.originalError = originalError;
   }
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       message: this.message,

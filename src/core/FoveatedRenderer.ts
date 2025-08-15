@@ -25,6 +25,7 @@ export class FoveatedRenderer {
   private foveationTexture: ImageData | null = null;
   private qualityMap: Float32Array | null = null;
   private lastUpdateTime = 0;
+  private performanceMonitor = { frameTime: 16.7, quality: 1.0 };
 
   constructor(settings: Partial<FoveationSettings> = {}) {
     this.settings = {
@@ -44,11 +45,13 @@ export class FoveatedRenderer {
    */
   updateEyeTracking(data: EyeTrackingData): void {
     this.eyeTrackingData = data;
+    this.lastUpdateTime = performance.now();
     
     // Regenerate foveation map if eye position changed significantly
     const threshold = 0.05; // 5% screen movement threshold
     if (this.shouldRegenerateFoveation(data, threshold)) {
       this.generateFoveationMap();
+      this.performanceMonitor.frameTime = performance.now() - this.lastUpdateTime;
     }
   }
 
@@ -103,7 +106,10 @@ export class FoveatedRenderer {
     
     const centerRadius = this.settings.centerRadius;
     const peripheralRadius = this.settings.peripheralRadius;
-    const _blendWidth = this.settings.blendWidth;
+    const blendWidth = this.settings.blendWidth;
+    
+    // Use blendWidth for smooth transitions
+    const transitionZone = Math.max(0.1, blendWidth);
     
     if (distance <= centerRadius) {
       // Full quality in center
@@ -115,8 +121,11 @@ export class FoveatedRenderer {
       // Smooth transition between center and periphery
       const normalizedDistance = (distance - centerRadius) / (peripheralRadius - centerRadius);
       
+      // Apply transition zone smoothing
+      const smoothedDistance = Math.min(1.0, normalizedDistance / transitionZone);
+      
       // Use smooth step function for natural falloff
-      const t = this.smoothstep(0, 1, normalizedDistance);
+      const t = this.smoothstep(0, 1, smoothedDistance);
       return 1.0 - t * 0.8; // Quality ranges from 1.0 to 0.2
     }
   }

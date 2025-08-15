@@ -12,6 +12,13 @@ export interface APIResponse<T = unknown> {
   requestId: string;
 }
 
+export interface APIConfig {
+  baseUrl: string;
+  timeout: number;
+  retryCount: number;
+  apiKey?: string;
+}
+
 export class NerfAPI {
   async initialize(): Promise<void> {
     console.log('NeRF API initialized');

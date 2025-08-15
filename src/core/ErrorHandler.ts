@@ -33,7 +33,7 @@ export interface NerfError {
   severity: ErrorSeverity;
   category: ErrorCategory;
   message: string;
-  details: any;
+  details: unknown;
   stack?: string;
   recovery?: RecoveryStrategy;
   context: ErrorContext;
@@ -43,10 +43,10 @@ export interface ErrorContext {
   component: string;
   operation: string;
   userAgent?: string;
-  deviceInfo?: any;
-  performanceState?: any;
+  deviceInfo?: unknown;
+  performanceState?: unknown;
   memoryUsage?: number;
-  renderingState?: any;
+  renderingState?: unknown;
 }
 
 export interface RecoveryStrategy {
@@ -408,21 +408,30 @@ export class ErrorHandler {
     severity: ErrorSeverity,
     category: ErrorCategory
   ): NerfError {
-    return {
+    const nerfError: NerfError = {
       id: this.generateErrorId(),
       timestamp: Date.now(),
       severity,
       category,
       message: typeof error === 'string' ? error : error.message,
       details: typeof error === 'object' ? error : {},
-      stack: typeof error === 'object' ? error.stack : undefined,
-      recovery: this.recoveryStrategies.get(category),
       context: {
         component: 'unknown',
         operation: 'unknown',
         ...context
       }
     };
+    
+    if (typeof error === 'object' && error.stack) {
+      nerfError.stack = error.stack;
+    }
+    
+    const recoveryStrategy = this.recoveryStrategies.get(category);
+    if (recoveryStrategy) {
+      nerfError.recovery = recoveryStrategy;
+    }
+    
+    return nerfError;
   }
   
   private initializeRecoveryStrategies(): void {
@@ -621,7 +630,7 @@ export class RemoteErrorReporter implements ErrorReporter {
       // Would send to actual monitoring service
       console.log(`📡 Reporting error ${error.id} to ${this.endpoint}`);
       
-      const _payload = {
+      const payload = {
         ...error,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         timestamp: new Date(error.timestamp).toISOString()
@@ -629,7 +638,7 @@ export class RemoteErrorReporter implements ErrorReporter {
       
       // Mock remote reporting
       await this.delay(100);
-      console.log('✅ Error reported to remote service');
+      console.log('✅ Error reported to remote service', payload.id);
       
     } catch (reportError) {
       console.log('❌ Failed to report error to remote service:', reportError);
