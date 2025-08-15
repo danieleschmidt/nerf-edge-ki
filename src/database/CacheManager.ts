@@ -271,10 +271,15 @@ export class CacheManager<T = any> {
     console.log(`Preloading ${entries.length} cache entries...`);
     
     for (const entry of entries) {
-      await this.set(entry.key, entry.data, {
-        priority: entry.priority || 1.0, // High priority for preloaded data
-        tags: entry.tags
-      });
+      const options: { priority: number; tags?: string[] } = {
+        priority: entry.priority || 1.0 // High priority for preloaded data
+      };
+      
+      if (entry.tags) {
+        options.tags = entry.tags;
+      }
+      
+      await this.set(entry.key, entry.data, options);
     }
     
     console.log('Cache preloading complete');
@@ -497,6 +502,11 @@ export class CacheManager<T = any> {
         }
       };
       
+      if (!this.compressionWorker) {
+        reject(new Error('Compression worker not initialized'));
+        return;
+      }
+      
       this.compressionWorker.addEventListener('message', handler);
       this.compressionWorker.postMessage({ action: 'compress', data, id });
     });
@@ -526,6 +536,11 @@ export class CacheManager<T = any> {
           }
         }
       };
+      
+      if (!this.compressionWorker) {
+        reject(new Error('Compression worker not initialized'));
+        return;
+      }
       
       this.compressionWorker.addEventListener('message', handler);
       this.compressionWorker.postMessage({ action: 'decompress', data, id });

@@ -80,7 +80,7 @@ declare global {
     createCommandEncoder(descriptor?: GPUCommandEncoderDescriptor): GPUCommandEncoder;
     queue: GPUQueue;
     destroy(): void;
-    addEventListener(type: string, listener: (event: any) => void): void;
+    addEventListener(type: string, listener: (event: Event) => void): void;
   }
 
   interface GPUSupportedLimits {
@@ -187,7 +187,7 @@ declare global {
     visibility: number;
     buffer?: { type: string };
     texture?: { sampleType: string; viewDimension: string };
-    sampler?: any;
+    sampler?: { type: string };
   }
 
   interface GPUPipelineLayoutDescriptor {

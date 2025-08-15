@@ -125,7 +125,11 @@ export class RobustNerfManager {
       
       // Load scene with timeout
       await this.withTimeout(
-        this.renderer.setScene.bind(this.renderer),
+        async (...args: unknown[]) => {
+          const [sceneArg] = args as [NerfScene];
+          this.renderer.setScene(sceneArg);
+          return Promise.resolve();
+        },
         [scene],
         this.config.operationTimeout
       );
@@ -238,6 +242,7 @@ export class RobustNerfManager {
       // Reset error counters
       this.retryCount.clear();
       this.errorHistory.length = 0;
+      this.lastRecoveryTime = Date.now();
       
       // Reinitialize systems
       await this.initializeRecoveredSystems();
@@ -289,13 +294,18 @@ export class RobustNerfManager {
       }
     }
 
-    return {
+    const result: RobustOperationResult<T> = {
       success: false,
-      error: lastError,
       attempts,
       duration: Date.now() - startTime,
       recoveryActions
     };
+    
+    if (lastError) {
+      result.error = lastError;
+    }
+    
+    return result;
   }
 
   /**

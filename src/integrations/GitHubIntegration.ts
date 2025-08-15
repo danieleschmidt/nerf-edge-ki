@@ -9,6 +9,22 @@ export interface GitHubConfig {
   branch?: string;
 }
 
+export interface GitHubRelease {
+  id: string;
+  name: string;
+  tagName: string;
+  publishedAt: string;
+  assets: Array<{ name: string; downloadUrl: string }>;
+}
+
+export interface ModelVersion {
+  version: string;
+  hash: string;
+  size: number;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
+}
+
 export class GitHubIntegration {
   private config: GitHubConfig;
 
@@ -16,7 +32,7 @@ export class GitHubIntegration {
     this.config = config;
   }
 
-  async listModelVersions(): Promise<any[]> {
+  async listModelVersions(): Promise<ModelVersion[]> {
     console.log(`Listing models from ${this.config.owner}/${this.config.repo}`);
     return [];
   }

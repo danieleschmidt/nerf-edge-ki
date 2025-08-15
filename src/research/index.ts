@@ -59,8 +59,8 @@ export {
   type ResearchMetrics
 } from './ResearchIntegrationHub';
 
-// Demo System
-export { ResearchIntegrationDemo } from '../../examples/research-integration-demo';
+// Demo System - Examples excluded from TypeScript compilation
+// export { ResearchIntegrationDemo } from '../../examples/research-integration-demo';
 
 // Version information
 export const RESEARCH_VERSION = '1.0.0';
