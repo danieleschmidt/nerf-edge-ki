@@ -235,7 +235,7 @@ export class GlobalizationEngine {
     // Test each accessibility feature
     for (const [name, feature] of this.accessibilityFeatures) {
       const testResult = await this.accessibilityChecker.testFeature(feature);
-      auditResults.features[name] = testResult;
+      (auditResults.features as any)[name] = testResult;
     }
 
     // Calculate overall score
@@ -244,7 +244,7 @@ export class GlobalizationEngine {
     auditResults.overallScore = (passedFeatures / totalFeatures) * 100;
 
     // Generate recommendations
-    auditResults.recommendations = this.generateAccessibilityRecommendations(auditResults.features);
+    auditResults.recommendations = this.generateAccessibilityRecommendations(auditResults.features) as any;
 
     console.log(`♿ Accessibility audit complete: ${auditResults.overallScore.toFixed(1)}% compliant`);
     return auditResults;
@@ -670,7 +670,7 @@ export class GlobalizationEngine {
     
     for (const [code, locale] of this.locales) {
       const translations = this.translations.get(code);
-      stats[code] = {
+      (stats as any)[code] = {
         name: locale.name,
         nativeName: locale.nativeName,
         direction: locale.direction,
@@ -696,7 +696,7 @@ export class GlobalizationEngine {
     const status = {};
     
     for (const [name, framework] of this.complianceFrameworks) {
-      status[name] = {
+      (status as any)[name] = {
         region: framework.region,
         status: framework.certificationStatus,
         lastAudit: new Date(framework.lastAudit).toISOString(),

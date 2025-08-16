@@ -168,7 +168,7 @@ export class ComprehensiveMonitor {
   /**
    * Update system metrics from external sources
    */
-  updateMetrics(source: string, metrics: Partial<MetricsSnapshot>): void {
+  updateMetrics(_source: string, metrics: Partial<MetricsSnapshot>): void {
     const snapshot: MetricsSnapshot = {
       timestamp: Date.now(),
       performance: {
@@ -450,9 +450,9 @@ export class ComprehensiveMonitor {
   private collectSystemMetrics(): MetricsSnapshot['system'] {
     return {
       powerConsumption: this.estimatePowerConsumption(),
-      temperature: this.getSystemTemperature(),
-      batteryLevel: this.getBatteryLevel(),
-      networkLatency: this.getNetworkLatency()
+      temperature: this.getSystemTemperature() || undefined,
+      batteryLevel: this.getBatteryLevel() || undefined,
+      networkLatency: this.getNetworkLatency() || undefined
     };
   }
 

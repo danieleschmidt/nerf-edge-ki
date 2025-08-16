@@ -48,8 +48,8 @@ export class TemporalNerfPrediction {
   private motionField: Map<string, [number, number, number]> = new Map();
   
   // Neural temporal networks
-  private temporalNetwork: any = null; // Would be actual neural network
-  private motionNetwork: any = null;
+  private _temporalNetwork: any = null; // Would be actual neural network
+  private _motionNetwork: any = null;
   
   constructor(config: TemporalConfig) {
     this.config = config;
@@ -306,10 +306,10 @@ export class TemporalNerfPrediction {
     rotation: [number, number, number, number];
   } {
     // Mock LSTM-style temporal prediction
-    const latest = this.frameHistory[this.frameHistory.length - 1];
+    const _latest = this.frameHistory[this.frameHistory.length - 1];
     
     // Simple recurrent computation
-    let hiddenState = new Float32Array(128);
+    let hiddenState = new Float32Array(new ArrayBuffer(128 * 4));
     
     // Process sequence
     for (let i = 0; i < features.length / 12; i++) {
@@ -368,7 +368,7 @@ export class TemporalNerfPrediction {
     const changes: SceneChange[] = [];
     
     // Analyze recent scene changes for patterns
-    const recentChanges = this.getRecentSceneChanges();
+    const _recentChanges = this.getRecentSceneChanges();
     
     // Predict object motions
     const motionPredictions = this.predictObjectMotions(steps);
@@ -606,7 +606,7 @@ export class TemporalNerfPrediction {
    */
   private extrapolateRotation(rotation: [number, number, number, number], angularVel: [number, number, number], dt: number): [number, number, number, number] {
     // Simplified rotation extrapolation
-    const [w, x, y, z] = rotation;
+    const [_w, _x, _y, _z] = rotation;
     const [wx, wy, wz] = angularVel;
     
     // Convert angular velocity to quaternion

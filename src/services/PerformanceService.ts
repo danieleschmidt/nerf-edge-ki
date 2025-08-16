@@ -45,6 +45,15 @@ export class PerformanceService {
   private frameTimeHistory: number[] = [];
   private memoryHistory: number[] = [];
   private powerHistory: number[] = [];
+  
+  // Auto-scaling and optimization
+  private autoScalingEnabled = false;
+  private lastOptimization = 0;
+  private optimizationCooldown = 5000; // 5 seconds
+  private performanceTrends: { direction: 'up' | 'down' | 'stable'; confidence: number } = {
+    direction: 'stable',
+    confidence: 0
+  };
 
   constructor() {
     this.currentProfile = this.getDefaultProfile();
@@ -177,6 +186,9 @@ export class PerformanceService {
     if (this.metrics.length > this.maxHistorySize) {
       this.metrics.shift();
     }
+    
+    // Trigger auto-optimization if enabled
+    this.autoOptimize();
   }
 
   /**
@@ -355,6 +367,122 @@ export class PerformanceService {
   }
 
   /**
+   * Enable auto-scaling for dynamic performance optimization
+   */
+  enableAutoScaling(): void {
+    this.autoScalingEnabled = true;
+    console.log('🚀 Auto-scaling enabled - system will optimize performance automatically');
+  }
+
+  /**
+   * Disable auto-scaling
+   */
+  disableAutoScaling(): void {
+    this.autoScalingEnabled = false;
+    console.log('⏸️  Auto-scaling disabled');
+  }
+
+  /**
+   * Intelligent auto-optimization based on performance trends
+   */
+  private autoOptimize(): void {
+    if (!this.autoScalingEnabled || Date.now() - this.lastOptimization < this.optimizationCooldown) {
+      return;
+    }
+
+    const stats = this.getCurrentStats();
+    this.updatePerformanceTrends(stats);
+
+    if (this.performanceTrends.confidence > 0.7) {
+      const optimizations = this.generateOptimizations(stats);
+      if (optimizations.length > 0) {
+        console.log(`🎯 Auto-optimization triggered: ${optimizations.join(', ')}`);
+        this.lastOptimization = Date.now();
+        
+        // Apply optimizations (would integrate with renderer in real implementation)
+        this.applyOptimizations(optimizations);
+      }
+    }
+  }
+
+  /**
+   * Update performance trend analysis
+   */
+  private updatePerformanceTrends(stats: any): void {
+    if (this.fpsHistory.length < 10) return; // Need enough data
+    
+    const recentFPS = this.fpsHistory.slice(-10);
+    const trend = this.calculateTrend(recentFPS);
+    
+    const target = stats.target.fps;
+    const current = stats.averages.fps;
+    
+    if (current < target * 0.85) {
+      this.performanceTrends = { direction: 'down', confidence: Math.min(1, trend.confidence + 0.2) };
+    } else if (current > target * 1.1) {
+      this.performanceTrends = { direction: 'up', confidence: Math.min(1, trend.confidence + 0.1) };
+    } else {
+      this.performanceTrends = { direction: 'stable', confidence: Math.max(0, trend.confidence - 0.1) };
+    }
+  }
+
+  /**
+   * Calculate statistical trend from data points
+   */
+  private calculateTrend(data: number[]): { direction: 'up' | 'down' | 'stable'; confidence: number } {
+    if (data.length < 3) return { direction: 'stable', confidence: 0 };
+    
+    // Simple linear regression for trend detection
+    const n = data.length;
+    const sumX = (n * (n + 1)) / 2;
+    const sumY = data.reduce((a, b) => a + b, 0);
+    const sumXY = data.reduce((sum, y, i) => sum + (i + 1) * y, 0);
+    const sumX2 = (n * (n + 1) * (2 * n + 1)) / 6;
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const confidence = Math.abs(slope) * 10; // Simple confidence metric
+    
+    if (slope > 0.1) return { direction: 'up', confidence: Math.min(1, confidence) };
+    if (slope < -0.1) return { direction: 'down', confidence: Math.min(1, confidence) };
+    return { direction: 'stable', confidence: Math.min(1, confidence) };
+  }
+
+  /**
+   * Generate optimization recommendations
+   */
+  private generateOptimizations(stats: any): string[] {
+    const optimizations: string[] = [];
+    const { current, target } = stats;
+    
+    if (current.fps < target.fps * 0.8) {
+      optimizations.push('reduce_quality');
+      optimizations.push('enable_foveated_rendering');
+    }
+    
+    if (current.memoryUsage > target.memoryLimit * 0.9) {
+      optimizations.push('clear_cache');
+      optimizations.push('reduce_texture_quality');
+    }
+    
+    if (current.powerConsumption > target.powerLimit * 0.9) {
+      optimizations.push('reduce_frame_rate');
+      optimizations.push('enable_power_saving');
+    }
+    
+    return optimizations;
+  }
+
+  /**
+   * Apply optimizations (placeholder for integration with renderer)
+   */
+  private applyOptimizations(optimizations: string[]): void {
+    // In a real implementation, this would call renderer methods
+    for (const optimization of optimizations) {
+      console.log(`🔧 Applying optimization: ${optimization}`);
+    }
+  }
+
+  /**
    * Clear performance history
    */
   clearHistory(): void {
@@ -364,6 +492,7 @@ export class PerformanceService {
     this.memoryHistory.length = 0;
     this.powerHistory.length = 0;
     this.benchmarkResults.length = 0;
+    this.performanceTrends = { direction: 'stable', confidence: 0 };
     console.log('Performance history cleared');
   }
 

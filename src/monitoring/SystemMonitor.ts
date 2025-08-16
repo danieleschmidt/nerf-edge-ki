@@ -249,7 +249,7 @@ export class SystemMonitor {
   startSpan(operation: string, component: string, parentId?: string): string {
     const span: TracingSpan = {
       id: this.generateSpanId(),
-      parentId,
+      parentId: parentId || undefined,
       operation,
       component,
       startTime: performance.now(),
@@ -680,7 +680,7 @@ class TrendAnalyzer {
 }
 
 class AnomalyDetector {
-  async detectAnomalies(component: string, current: PerformanceMetrics, history: PerformanceMetrics[]): Promise<string[]> {
+  async detectAnomalies(_component: string, current: PerformanceMetrics, history: PerformanceMetrics[]): Promise<string[]> {
     const anomalies: string[] = [];
     
     if (history.length < 5) return anomalies;

@@ -124,7 +124,7 @@ export class HealthMonitor {
     
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
-      this.checkInterval = undefined;
+      this.checkInterval = undefined as any;
     }
   }
   
@@ -161,7 +161,7 @@ export class HealthMonitor {
       value,
       unit,
       timestamp: Date.now(),
-      threshold,
+      threshold: threshold || undefined,
       status
     };
     

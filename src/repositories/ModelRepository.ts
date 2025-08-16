@@ -16,6 +16,20 @@ export interface ModelQuery {
   tags?: string[];
 }
 
+export interface ModelUpdateRequest {
+  name?: string;
+  quality?: string;
+  tags?: string[];
+  metadata?: any;
+}
+
+export interface ModelStats {
+  total: number;
+  totalSize: number;
+  avgQuality: number;
+  createdToday: number;
+}
+
 export class ModelRepository {
   async initialize(): Promise<void> {
     console.log('ModelRepository initialized');

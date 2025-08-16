@@ -17,10 +17,10 @@ export interface NotificationEvent {
 }
 
 export class NotificationService {
-  private config: NotificationConfig;
+  private _config: NotificationConfig;
 
   constructor(config: NotificationConfig = { enabled: true, channels: ['console'] }) {
-    this.config = config;
+    this._config = config;
   }
 
   async sendNotification(_message: string): Promise<void> {
