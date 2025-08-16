@@ -75,6 +75,7 @@ declare global {
     createBuffer(descriptor: GPUBufferDescriptor): GPUBuffer;
     createTexture(descriptor: GPUTextureDescriptor): GPUTexture;
     createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor): GPUBindGroupLayout;
+    createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
     createPipelineLayout(descriptor: GPUPipelineLayoutDescriptor): GPUPipelineLayout;
     createRenderPipeline(descriptor: GPURenderPipelineDescriptor): GPURenderPipeline;
     createCommandEncoder(descriptor?: GPUCommandEncoderDescriptor): GPUCommandEncoder;
@@ -264,6 +265,25 @@ declare global {
     format: GPUTextureFormat;
     usage: number;
     alphaMode: string;
+  }
+
+  interface GPUBindGroup {
+    // WebGPU bind group
+  }
+
+  interface GPUBindGroupDescriptor {
+    label?: string;
+    layout: GPUBindGroupLayout;
+    entries: GPUBindGroupEntry[];
+  }
+
+  interface GPUBindGroupEntry {
+    binding: number;
+    resource: GPUBuffer | GPUTextureView | GPUSampler;
+  }
+
+  interface GPUSampler {
+    // WebGPU sampler
   }
 
   interface GPUImageCopyTexture {

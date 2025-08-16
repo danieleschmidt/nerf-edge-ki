@@ -77,29 +77,56 @@ export class NerfRenderer {
    * Initialize the renderer with WebGPU backend
    */
   async initialize(canvas?: HTMLCanvasElement): Promise<void> {
-    try {
-      this.canvas = canvas || null;
-      
-      // Initialize WebGPU backend
-      this.backend = new WebGPUBackend();
-      await this.backend.initialize(this.canvas, {
-        powerPreference: this.config.powerMode === 'performance' ? 'high-performance' : 'low-power',
-        limits: {
-          maxBufferSize: this.config.memoryLimit * 1024 * 1024 // Convert MB to bytes
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        this.canvas = canvas || null;
+        
+        // Check WebGPU support before initialization
+        if (!navigator.gpu) {
+          throw new Error('WebGPU not supported in this browser');
         }
-      });
-      
-      // Setup render pipeline
-      await this.setupRenderPipeline();
-      
-      this.isInitialized = true;
-      
-      console.log(`NerfRenderer initialized: ${this.config.maxResolution.join('x')} @ ${this.config.targetFPS}fps`);
-      console.log(`Backend: ${this.backend.getInfo().vendor} ${this.backend.getInfo().device}`);
-      
-    } catch (error) {
-      console.error('Failed to initialize NerfRenderer:', error);
-      throw error;
+        
+        // Initialize WebGPU backend with fallback options
+        this.backend = new WebGPUBackend();
+        await this.backend.initialize(this.canvas, {
+          powerPreference: this.config.powerMode === 'performance' ? 'high-performance' : 'low-power',
+          limits: {
+            maxBufferSize: this.config.memoryLimit * 1024 * 1024 // Convert MB to bytes
+          }
+        });
+        
+        // Setup render pipeline with error recovery
+        await this.setupRenderPipeline();
+        
+        // Validate initialization
+        if (!this.backend.getDevice()) {
+          throw new Error('WebGPU device initialization failed');
+        }
+        
+        this.isInitialized = true;
+        
+        console.log(`✅ NerfRenderer initialized: ${this.config.maxResolution.join('x')} @ ${this.config.targetFPS}fps`);
+        console.log(`🔧 Backend: ${this.backend.getInfo().vendor} ${this.backend.getInfo().device}`);
+        console.log(`💾 Memory limit: ${this.config.memoryLimit}MB, Power mode: ${this.config.powerMode}`);
+        
+        return; // Success, exit retry loop
+        
+      } catch (error) {
+        attempt++;
+        console.warn(`⚠️  NerfRenderer initialization attempt ${attempt}/${maxRetries} failed:`, error);
+        
+        if (attempt >= maxRetries) {
+          console.error('❌ Failed to initialize NerfRenderer after all retries');
+          this.isInitialized = false;
+          throw new Error(`NerfRenderer initialization failed after ${maxRetries} attempts: ${error}`);
+        }
+        
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
     }
   }
 

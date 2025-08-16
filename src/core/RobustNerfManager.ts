@@ -64,7 +64,7 @@ export class RobustNerfManager {
   
   // Error recovery
   private retryCount = new Map<string, number>();
-  private lastRecoveryTime = 0;
+  private _lastRecoveryTime = 0;
 
   constructor(renderer: EnhancedNerfRenderer, config: Partial<RobustNerfConfig> = {}) {
     this.renderer = renderer;
@@ -242,7 +242,7 @@ export class RobustNerfManager {
       // Reset error counters
       this.retryCount.clear();
       this.errorHistory.length = 0;
-      this.lastRecoveryTime = Date.now();
+      this._lastRecoveryTime = Date.now();
       
       // Reinitialize systems
       await this.initializeRecoveredSystems();

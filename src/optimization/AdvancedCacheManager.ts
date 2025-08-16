@@ -342,10 +342,10 @@ export class AdvancedCacheManager<T> {
     // Prefer evicting from t1 when p is small
     if (this.t1.size > 0 && (this.t1.size > this.p || this.t2.size === 0)) {
       const key = this.t1.values().next().value;
-      return key;
+      return key || '';
     } else if (this.t2.size > 0) {
       const key = this.t2.values().next().value;
-      return key;
+      return key || '';
     }
 
     // Fallback to LRU if ARC lists are empty

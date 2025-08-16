@@ -276,7 +276,7 @@ export class QuantumErrorHandler extends EventEmitter {
         console.log('🔗 Attempting entanglement repair...');
         
         // Try to re-establish broken entanglements
-        const brokenEntanglements = error.context.brokenEntanglements || [];
+        const brokenEntanglements = _error.context.brokenEntanglements || [];
         const repairedEntanglements = brokenEntanglements.filter(() => Math.random() > 0.3);
         
         return {
@@ -320,8 +320,8 @@ export class QuantumErrorHandler extends EventEmitter {
         console.log('🌡️ Restarting quantum annealing...');
         
         // Restart annealing with adjusted parameters
-        const newTemperature = (error.context.temperature || 0.1) * 1.5;
-        const newAnnealingTime = (error.context.annealingTime || 1000) * 0.8;
+        const newTemperature = (_error.context.temperature || 0.1) * 1.5;
+        const newAnnealingTime = (_error.context.annealingTime || 1000) * 0.8;
         
         return {
           success: true,

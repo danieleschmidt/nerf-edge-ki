@@ -14,6 +14,13 @@ export { SpatialUtils } from './utils/SpatialUtils';
 export { NerfService } from './services/NerfService';
 export { PerformanceService } from './services/PerformanceService';
 
+// Import core classes for typing
+import { NerfRenderer } from './rendering/NerfRenderer';
+import { NerfService } from './services/NerfService';
+import { PerformanceService } from './services/PerformanceService';
+import { NerfScene } from './core/NerfScene';
+import { NerfConfig, RenderOptions } from './core/types';
+
 // Database exports
 export { NeRFStorage } from './database/NeRFStorage';
 export { CacheManager } from './database/CacheManager';
@@ -136,7 +143,7 @@ let globalSDK: {
 /**
  * Initialize the NeRF Edge Kit with comprehensive setup
  */
-export async function initialize(config?: Partial<import('./core/types').NerfConfig>): Promise<{
+export async function initialize(config?: Partial<NerfConfig>): Promise<{
   renderer: NerfRenderer;
   service: NerfService;
   performance: PerformanceService;
@@ -149,7 +156,7 @@ export async function initialize(config?: Partial<import('./core/types').NerfCon
     const performance = new PerformanceService();
     
     // Create renderer with config
-    const defaultConfig: import('./core/types').NerfConfig = {
+    const defaultConfig: NerfConfig = {
       targetFPS: 60,
       maxResolution: [1920, 1080],
       foveatedRendering: false,
