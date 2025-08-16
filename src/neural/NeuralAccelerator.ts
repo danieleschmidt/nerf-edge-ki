@@ -25,11 +25,11 @@ export interface LayerConfig {
 
 export class NeuralAccelerator {
   private config: AcceleratorConfig;
-  private model: any = null; // TensorFlow.js model
+  private _model: any = null; // TensorFlow.js model
   private isInitialized = false;
   private inferenceCache: Map<string, Float32Array> = new Map();
-  private batchQueue: Float32Array[] = [];
-  private processingBatch = false;
+  private _batchQueue: Float32Array[] = [];
+  private _processingBatch = false;
 
   constructor(config: AcceleratorConfig) {
     this.config = config;
@@ -44,7 +44,7 @@ export class NeuralAccelerator {
       await this.setBackend();
       
       // Initialize model architecture
-      this.model = await this.createModel();
+      this._model = await this.createModel();
       
       this.isInitialized = true;
       console.log(`Neural accelerator initialized: ${this.config.backend} backend, ${this.config.precision} precision`);
@@ -232,7 +232,7 @@ export class NeuralAccelerator {
    */
   private forwardPass(input: Float32Array): Float32Array {
     // Mock neural network computation
-    let activation = new Float32Array(input);
+    let activation = new Float32Array(input.buffer);
     
     // Layer 1-3: Feature processing
     activation = this.denseLayer(activation, 256);
@@ -245,7 +245,7 @@ export class NeuralAccelerator {
     activation = this.applyActivation(activation, 'relu');
     
     // Layer 4: Skip connection
-    const skip = new Float32Array(activation);
+    const skip = new Float32Array(activation.buffer);
     
     // Layer 5-7: Deep processing
     activation = this.denseLayer(activation, 256);
@@ -389,8 +389,8 @@ export class NeuralAccelerator {
    */
   dispose(): void {
     this.clearCache();
-    this.batchQueue = [];
-    this.model = null;
+    this._batchQueue = [];
+    this._model = null;
     this.isInitialized = false;
     console.log('Neural accelerator disposed');
   }

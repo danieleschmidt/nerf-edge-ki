@@ -436,7 +436,9 @@ export class NeRFStorage {
     // Enforce cache size limit
     if (this.memoryCache.size > this.maxCacheSize) {
       const firstKey = this.memoryCache.keys().next().value;
-      this.memoryCache.delete(firstKey);
+      if (firstKey) {
+        this.memoryCache.delete(firstKey);
+      }
     }
   }
 

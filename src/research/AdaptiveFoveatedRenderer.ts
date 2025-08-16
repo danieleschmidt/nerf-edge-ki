@@ -20,6 +20,7 @@
  */
 
 import { NerfModel } from '../core/NerfModel';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Complex } from '../quantum';
 
 export interface EyeCharacteristics {
@@ -105,7 +106,7 @@ export class AdaptiveFoveatedRenderer {
   private gazePredictor: AIGazePredictor;
   private perceptualModel: HumanVisualSystemModel;
   private contentAnalyzer: ContentAwareAnalyzer;
-  private renderOptimizer: PowerAwareOptimizer;
+  private _renderOptimizer: PowerAwareOptimizer | null = null;
   
   // Temporal tracking
   private gazeHistory: [number, number][] = [];
@@ -113,10 +114,10 @@ export class AdaptiveFoveatedRenderer {
   private performanceHistory: number[] = [];
   
   // Adaptive parameters
-  private adaptiveFoveation: FoveationLevels;
+  private _adaptiveFoveation: FoveationLevels | null = null;
   private qualityMap: Float32Array;
-  private motionVectorField: Float32Array;
-  private attentionHeatmap: Float32Array;
+  private _motionVectorField: Float32Array | null = null;
+  private _attentionHeatmap: Float32Array | null = null;
   
   constructor(
     initialEyeCharacteristics: Partial<EyeCharacteristics> = {},
@@ -178,7 +179,7 @@ export class AdaptiveFoveatedRenderer {
    * Uses transformer-based neural networks to predict where the user will
    * look next, enabling proactive rendering of important regions.
    */
-  async predictGaze(currentGaze: [number, number], timestamp: number): Promise<GazePrediction> {
+  async predictGaze(currentGaze: [number, number], _timestamp: number): Promise<GazePrediction> {
     
     // Update gaze history
     this.gazeHistory.push(currentGaze);

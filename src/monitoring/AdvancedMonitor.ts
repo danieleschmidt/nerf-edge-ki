@@ -129,7 +129,7 @@ export class AdvancedMonitor {
       value,
       timestamp: performance.now(),
       tags: { ...this.config.customTags, ...tags },
-      unit
+      unit: unit || undefined
     };
 
     if (!this.metrics.has(name)) {
@@ -350,7 +350,7 @@ export class AdvancedMonitor {
       name: 'low-fps',
       condition: (snapshot) => snapshot.fps < 30,
       severity: 'warning',
-      message: `Low FPS detected: ${snapshot => snapshot.fps.toFixed(1)}`,
+      message: 'Low FPS detected',
       cooldownMs: 10000 // 10 seconds
     });
 

@@ -30,7 +30,6 @@ export interface BackendInfo {
 export class WebGPUBackend {
   private device: GPUDevice | null = null;
   private adapter: GPUAdapter | null = null;
-  private canvas: HTMLCanvasElement | null = null;
   private context: GPUCanvasContext | null = null;
   private swapChainFormat: GPUTextureFormat = 'bgra8unorm';
   
@@ -48,6 +47,13 @@ export class WebGPUBackend {
   private gpuUsage = 0;
   private lastFrameTime = 0;
   private frameCount = 0;
+  
+  // Circuit breaker pattern for fault tolerance
+  private failureCount = 0;
+  private lastFailureTime = 0;
+  private circuitBreakerOpen = false;
+  private readonly maxFailures = 5;
+  private readonly resetTimeout = 30000; // 30 seconds
 
   /**
    * Initialize WebGPU with optional canvas and configuration
@@ -59,7 +65,7 @@ export class WebGPUBackend {
       }
 
       // Request adapter with preferences
-      this.adapter = await navigator.gpu.requestAdapter({
+      this.adapter = await navigator.gpu!.requestAdapter({
         powerPreference: config.powerPreference || 'high-performance',
         forceFallbackAdapter: false
       });
@@ -84,21 +90,21 @@ export class WebGPUBackend {
       this.device = await this.adapter.requestDevice(deviceDescriptor);
       
       // Setup error handling
-      this.device.addEventListener('uncapturederror', (event) => {
+      this.device.addEventListener('uncapturederror', (event: any) => {
         console.error('WebGPU uncaptured error:', event.error);
       });
       
       // Setup canvas if provided
       if (canvas) {
         this.canvas = canvas;
-        this.context = canvas.getContext('webgpu');
+        this.context = canvas.getContext('webgpu') as GPUCanvasContext;
         
         if (!this.context) {
           throw new Error('Failed to get WebGPU context from canvas');
         }
         
         // Configure swap chain
-        this.swapChainFormat = navigator.gpu.getPreferredCanvasFormat();
+        this.swapChainFormat = navigator.gpu!.getPreferredCanvasFormat();
         this.context.configure({
           device: this.device,
           format: this.swapChainFormat,
@@ -145,13 +151,13 @@ export class WebGPUBackend {
               sampleType: 'float',
               viewDimension: '2d'
             }
-          };
+          } as any;
         } else {
           bindingType = {
             buffer: {
               type: 'uniform'
             }
-          };
+          } as any;
         }
         
         bindGroupLayoutEntries.push({
@@ -369,6 +375,38 @@ export class WebGPUBackend {
     return this.context;
   }
 
+  /**
+   * Circuit breaker methods for fault tolerance
+   */
+  private checkCircuitBreaker(): void {
+    if (this.circuitBreakerOpen) {
+      const timeSinceLastFailure = Date.now() - this.lastFailureTime;
+      if (timeSinceLastFailure > this.resetTimeout) {
+        console.log('🔄 Circuit breaker reset - attempting to recover');
+        this.circuitBreakerOpen = false;
+        this.failureCount = 0;
+      } else {
+        throw new Error('Circuit breaker is open - WebGPU operations suspended');
+      }
+    }
+  }
+
+  private recordFailure(error: Error): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failureCount >= this.maxFailures) {
+      this.circuitBreakerOpen = true;
+      console.error(`⚠️  Circuit breaker opened after ${this.failureCount} failures. Last error:`, error);
+    }
+  }
+
+  private recordSuccess(): void {
+    if (this.failureCount > 0) {
+      this.failureCount = Math.max(0, this.failureCount - 1); // Gradually reduce failure count on success
+    }
+  }
+
   // Private helper methods
   
   private packUniforms(uniforms: Record<string, any>): ArrayBuffer {
@@ -377,7 +415,7 @@ export class WebGPUBackend {
     const view = new DataView(buffer);
     let offset = 0;
     
-    for (const [name, value] of Object.entries(uniforms)) {
+    for (const [, value] of Object.entries(uniforms)) {
       if (Array.isArray(value)) {
         // Vector or matrix data
         for (const element of value) {

@@ -106,11 +106,11 @@ export interface PerformanceValidation {
  * Comprehensive Validation System
  */
 export class ValidationSystem {
-  private rules: Map<string, ValidationRule> = new Map();
+  private _rules: Map<string, ValidationRule> = new Map();
   private errorHandler: ErrorHandler;
   private validationHistory: ValidationResult[] = [];
   private deviceCapabilities: DeviceCapabilities | null = null;
-  private performanceBaseline: PerformanceMetrics | null = null;
+  private _performanceBaseline: PerformanceMetrics | null = null;
   
   constructor(errorHandler: ErrorHandler) {
     this.errorHandler = errorHandler;
@@ -186,7 +186,7 @@ export class ValidationSystem {
    */
   async validateQualityMetrics(
     metrics: PerformanceMetrics,
-    expectedQuality: number = 0.9
+    _expectedQuality: number = 0.9
   ): Promise<ValidationResult> {
     
     const errors: ValidationError[] = [];
@@ -323,7 +323,7 @@ export class ValidationSystem {
 
   // Private validation methods
   
-  private async validateInputParameters(config: NerfConfig, context?: ValidationContext): Promise<ValidationResult> {
+  private async validateInputParameters(config: NerfConfig, _context?: ValidationContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
     
@@ -368,7 +368,7 @@ export class ValidationSystem {
     };
   }
   
-  private async validatePerformanceConstraints(config: NerfConfig, context?: ValidationContext): Promise<ValidationResult> {
+  private async validatePerformanceConstraints(config: NerfConfig, _context?: ValidationContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
     
@@ -409,7 +409,7 @@ export class ValidationSystem {
     };
   }
   
-  private async validateDeviceCapabilities(config: NerfConfig, context?: ValidationContext): Promise<ValidationResult> {
+  private async validateDeviceCapabilities(config: NerfConfig, _context?: ValidationContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
     
@@ -493,7 +493,7 @@ export class ValidationSystem {
     };
   }
   
-  private async validateSecurityConstraints(config: NerfConfig, context?: ValidationContext): Promise<ValidationResult> {
+  private async validateSecurityConstraints(_config: NerfConfig, context?: ValidationContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
     
@@ -525,7 +525,7 @@ export class ValidationSystem {
     };
   }
   
-  private async validateCameraParameters(options: RenderOptions, context?: ValidationContext): Promise<ValidationResult> {
+  private async validateCameraParameters(options: RenderOptions, _context?: ValidationContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
     
@@ -568,7 +568,7 @@ export class ValidationSystem {
     };
   }
   
-  private async validateSpatialBounds(options: RenderOptions, context?: ValidationContext): Promise<ValidationResult> {
+  private async validateSpatialBounds(options: RenderOptions, _context?: ValidationContext): Promise<ValidationResult> {
     const warnings: ValidationWarning[] = [];
     
     // Camera position validation

@@ -5,6 +5,16 @@
 import { NerfModel } from './NerfModel';
 import { SpatialTransform } from './types';
 
+export interface NerfModelData {
+  id: string;
+  name: string;
+  networkWeights: ArrayBuffer;
+  boundingBox: [number, number, number, number, number, number];
+  resolution: [number, number, number];
+  format: 'instant-ngp' | 'tensorf' | 'neus';
+  metadata: Record<string, any>;
+}
+
 export interface SceneConfig {
   /** Scene name */
   name: string;
@@ -321,7 +331,7 @@ export class NerfScene {
    * Optimize scene by removing invisible or distant models
    */
   optimizeForCamera(cameraPosition: [number, number, number], maxDistance: number = 50): void {
-    for (const [_id, sceneModel] of this.models.entries()) {
+    for (const [, sceneModel] of this.models.entries()) {
       const modelPos = sceneModel.transform.position;
       const distance = Math.sqrt(
         Math.pow(cameraPosition[0] - modelPos[0], 2) +
