@@ -312,9 +312,9 @@ describe('QuantumValidator', () => {
   describe('Task Set Validation', () => {
     test('should validate set of correct tasks', () => {
       const tasks = [
-        createValidTask('task-1'),
-        createValidTask('task-2', ['task-1']),
-        createValidTask('task-3')
+        createValidTask('task-1', [], { cpu: 0.3, memory: 200, gpu: 0.3, bandwidth: 50 }),
+        createValidTask('task-2', ['task-1'], { cpu: 0.3, memory: 200, gpu: 0.3, bandwidth: 50 }),
+        createValidTask('task-3', [], { cpu: 0.3, memory: 200, gpu: 0.3, bandwidth: 50 })
       ];
       
       const result = validator.validateTaskSet(tasks);

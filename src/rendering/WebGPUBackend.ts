@@ -31,6 +31,7 @@ export class WebGPUBackend {
   private device: GPUDevice | null = null;
   private adapter: GPUAdapter | null = null;
   private context: GPUCanvasContext | null = null;
+  private canvas: HTMLCanvasElement | null = null;
   private swapChainFormat: GPUTextureFormat = 'bgra8unorm';
   
   // Pipeline and resource management
@@ -97,7 +98,7 @@ export class WebGPUBackend {
       // Setup canvas if provided
       if (canvas) {
         this.canvas = canvas;
-        this.context = canvas.getContext('webgpu') as GPUCanvasContext;
+        this.context = canvas.getContext('webgpu') as unknown as GPUCanvasContext;
         
         if (!this.context) {
           throw new Error('Failed to get WebGPU context from canvas');

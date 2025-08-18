@@ -330,8 +330,20 @@ export class NerfRenderer {
       frameTime: Math.round(avgFrameTime * 100) / 100,
       gpuUtilization: this.backend?.getGPUUsage() || 0,
       memoryUsage: this.renderStats.memoryAllocated / 1024 / 1024, // MB
-      powerConsumption: this.estimatePowerConsumption()
+      powerConsumption: this.estimatePowerConsumption(),
+      frameCount: this.frameCount,
+      averageFrameTime: avgFrameTime
     };
+  }
+
+  /**
+   * Reset performance metrics (for testing)
+   */
+  resetPerformanceMetrics(): void {
+    this.frameCount = 0;
+    this.frameTimeHistory = [];
+    this.fpsHistory = [];
+    this.lastFrameTime = performance.now();
   }
 
   /**

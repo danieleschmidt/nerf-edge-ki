@@ -3,6 +3,9 @@
  * Entry point for quantum computing principles applied to task scheduling
  */
 
+import { QuantumTaskPlanner } from './QuantumTaskPlanner';
+import { QuantumNerfScheduler } from './QuantumNerfScheduler';
+
 export { QuantumTaskPlanner } from './QuantumTaskPlanner';
 export { QuantumNerfScheduler } from './QuantumNerfScheduler';
 export { QuantumErrorHandler } from './QuantumErrorHandler';
