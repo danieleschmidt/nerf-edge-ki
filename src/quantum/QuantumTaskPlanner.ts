@@ -217,7 +217,7 @@ export class QuantumTaskPlanner extends EventEmitter {
 
   // Private methods
 
-  private async replanAsync(): void {
+  private async replanAsync(): Promise<void> {
     try {
       await this.planOptimal();
     } catch (error) {

@@ -45,6 +45,10 @@ export interface PerformanceMetrics {
   memoryUsage: number;
   /** Power consumption in watts */
   powerConsumption: number;
+  /** Total frame count (for tests) */
+  frameCount?: number;
+  /** Average frame time (for tests) */
+  averageFrameTime?: number;
 }
 
 // WebGPU type declarations for compatibility
