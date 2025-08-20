@@ -447,6 +447,74 @@ export class WebGPUBackend {
   /**
    * Dispose of all resources
    */
+  
+  /**
+   * Render a frame with the given camera parameters
+   */
+  async render(
+    cameraPosition: [number, number, number],
+    cameraRotation: [number, number, number, number],
+    fieldOfView: number
+  ): Promise<void> {
+    if (!this.device || !this.context || !this.canvas) {
+      throw new Error('WebGPU backend not initialized');
+    }
+    
+    try {
+      // Begin command encoding
+      const commandEncoder = this.device.createCommandEncoder({
+        label: 'NeRF Render Command Encoder'
+      });
+      
+      // Get current canvas texture
+      const canvasTexture = this.context.getCurrentTexture();
+      const view = canvasTexture.createView();
+      
+      // Begin render pass
+      const renderPass = commandEncoder.beginRenderPass({
+        label: 'NeRF Render Pass',
+        colorAttachments: [{
+          view,
+          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+          loadOp: 'clear',
+          storeOp: 'store'
+        }]
+      });
+      
+      // Update camera uniforms (simplified)
+      const cameraData = new Float32Array([
+        ...cameraPosition,
+        fieldOfView / 180 * Math.PI, // Convert to radians
+        ...cameraRotation
+      ]);
+      
+      // Write camera data to uniform buffer if available
+      if (this.uniformBuffers.has('camera')) {
+        const cameraBuffer = this.uniformBuffers.get('camera')!;
+        this.device.queue.writeBuffer(cameraBuffer, 0, cameraData);
+      }
+      
+      // Set pipeline and draw (simplified for basic functionality)
+      if (this.pipelines.has('default')) {
+        const pipeline = this.pipelines.get('default')!;
+        renderPass.setPipeline(pipeline);
+        
+        // Draw fullscreen quad for ray marching
+        renderPass.draw(3, 1, 0, 0); // Triangle trick for fullscreen
+      }
+      
+      renderPass.end();
+      
+      // Submit commands
+      const commands = commandEncoder.finish();
+      this.device.queue.submit([commands]);
+      
+    } catch (error) {
+      console.error('WebGPU render failed:', error);
+      throw new Error(`WebGPU rendering failed: ${error.message}`);
+    }
+  }
+  
   dispose(): void {
     // Destroy all buffers
     for (const buffer of this.uniformBuffers.values()) {

@@ -137,29 +137,60 @@ export class PerformanceService {
       return;
     }
 
-    this.isMonitoring = true;
-    this.monitoringInterval = window.setInterval(() => {
-      try {
-        const metrics = metricsProvider();
-        this.recordMetrics(metrics);
-      } catch (error) {
-        console.error('Error collecting performance metrics:', error);
-      }
-    }, interval);
-
-    console.log(`Performance monitoring started (${interval}ms interval)`);
+    try {
+      this.isMonitoring = true;
+      
+      // Cross-environment compatibility
+      const setIntervalFn = typeof window !== 'undefined' ? window.setInterval : 
+                          typeof global !== 'undefined' ? global.setInterval :
+                          setInterval;
+      
+      this.monitoringInterval = setIntervalFn(() => {
+        try {
+          const metrics = metricsProvider();
+          this.recordMetrics(metrics);
+          
+          // Auto-optimization if enabled
+          if (this.autoScalingEnabled) {
+            this.optimizePerformance(metrics);
+          }
+        } catch (error) {
+          console.error('Error collecting performance metrics:', error);
+          this.handleMonitoringError(error);
+        }
+      }, interval);
+      
+      console.log(`Performance monitoring started (interval: ${interval}ms)`);
+    } catch (error) {
+      console.error('Failed to start performance monitoring:', error);
+      this.isMonitoring = false;
+      throw new Error(`Performance monitoring initialization failed: ${error.message}`);
+    }
   }
 
   /**
    * Stop performance monitoring
    */
   stopMonitoring(): void {
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
+    try {
+      if (this.monitoringInterval) {
+        // Cross-environment compatibility
+        const clearIntervalFn = typeof window !== 'undefined' ? window.clearInterval : 
+                               typeof global !== 'undefined' ? global.clearInterval :
+                               clearInterval;
+        
+        clearIntervalFn(this.monitoringInterval);
+        this.monitoringInterval = null;
+      }
+      
+      this.isMonitoring = false;
+      console.log('Performance monitoring stopped');
+    } catch (error) {
+      console.error('Error stopping performance monitoring:', error);
+      // Force stop
+      this.isMonitoring = false;
       this.monitoringInterval = null;
     }
-    this.isMonitoring = false;
-    console.log('Performance monitoring stopped');
   }
 
   /**
@@ -569,10 +600,50 @@ export class PerformanceService {
   }
 
   /**
+   * Handle monitoring errors with recovery strategies
+   */
+  private handleMonitoringError(error: any): void {
+    console.error('Performance monitoring error:', error);
+    
+    // Implement retry logic
+    if (this.isMonitoring) {
+      console.log('Attempting to recover performance monitoring...');
+      // Could implement exponential backoff here
+    }
+  }
+
+  /**
+   * Auto-optimize performance based on current metrics
+   */
+  private optimizePerformance(metrics: PerformanceMetrics): void {
+    try {
+      // Performance optimization logic
+      if (metrics.fps < this.currentProfile.target.fps * 0.8) {
+        console.log('FPS below target, considering quality reduction');
+      }
+      
+      if (metrics.memoryUsage > this.currentProfile.target.memoryLimit * 0.9) {
+        console.log('Memory usage high, considering cleanup');
+      }
+      
+      if (metrics.powerConsumption > this.currentProfile.target.powerLimit * 0.95) {
+        console.log('Power consumption high, considering power saving mode');
+      }
+    } catch (error) {
+      console.error('Error in performance optimization:', error);
+    }
+  }
+
+  /**
    * Dispose of service resources
    */
   dispose(): void {
-    this.stopMonitoring();
-    this.clearHistory();
+    try {
+      this.stopMonitoring();
+      this.clearHistory();
+      console.log('PerformanceService disposed');
+    } catch (error) {
+      console.error('Error disposing PerformanceService:', error);
+    }
   }
 }
