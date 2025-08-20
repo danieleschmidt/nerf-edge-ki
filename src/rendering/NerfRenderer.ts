@@ -98,82 +98,36 @@ export class NerfRenderer {
           }
         });
         
-        // Setup render pipeline with error recovery
-        await this.setupRenderPipeline();
-        
-        // Validate initialization
-        if (!this.backend.getDevice()) {
-          throw new Error('WebGPU device initialization failed');
-        }
-        
         this.isInitialized = true;
         
-        console.log(`✅ NerfRenderer initialized: ${this.config.maxResolution.join('x')} @ ${this.config.targetFPS}fps`);
-        console.log(`🔧 Backend: ${this.backend.getInfo().vendor} ${this.backend.getInfo().device}`);
-        console.log(`💾 Memory limit: ${this.config.memoryLimit}MB, Power mode: ${this.config.powerMode}`);
+        console.log(`✅ NeRF Renderer initialized successfully`);
+        console.log(`   Target FPS: ${this.config.targetFPS}`);
+        console.log(`   Max Resolution: ${this.config.maxResolution.join('x')}`);
+        console.log(`   Memory Limit: ${this.config.memoryLimit}MB`);
+        console.log(`   Foveated Rendering: ${this.config.foveatedRendering ? 'enabled' : 'disabled'}`);
         
-        return; // Success, exit retry loop
+        return; // Success, break retry loop
         
       } catch (error) {
         attempt++;
-        console.warn(`⚠️  NerfRenderer initialization attempt ${attempt}/${maxRetries} failed:`, error);
+        console.warn(`WebGPU initialization failed (attempt ${attempt}/${maxRetries}):`, error);
         
         if (attempt >= maxRetries) {
-          console.error('❌ Failed to initialize NerfRenderer after all retries');
-          this.isInitialized = false;
-          throw new Error(`NerfRenderer initialization failed after ${maxRetries} attempts: ${error}`);
+          throw new Error(`Failed to initialize WebGPU after ${maxRetries} attempts: ${error.message}`);
         }
         
-        // Wait before retry with exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
-  }
-
-  /**
-   * Setup the rendering pipeline with shaders and buffers
-   */
-  private async setupRenderPipeline(): Promise<void> {
-    if (!this.backend) throw new Error('Backend not initialized');
-    
-    const startTime = performance.now();
-    
-    // Create render pipeline for NeRF rendering
-    await this.backend.createRenderPipeline('nerf-main', {
-      vertex: this.getVertexShader(),
-      fragment: this.getFragmentShader(),
-      uniforms: [
-        { name: 'viewMatrix', type: 'mat4' },
-        { name: 'projMatrix', type: 'mat4' },
-        { name: 'time', type: 'f32' },
-        { name: 'resolution', type: 'vec2' },
-        { name: 'foveationCenter', type: 'vec2' },
-        { name: 'foveationParams', type: 'vec4' }
-      ]
-    });
-    
-    // Create foveated rendering pipeline if enabled
-    if (this.foveationConfig.enabled) {
-      await this.backend.createRenderPipeline('nerf-foveated', {
-        vertex: this.getVertexShader(),
-        fragment: this.getFoveatedFragmentShader(),
-        uniforms: [
-          { name: 'viewMatrix', type: 'mat4' },
-          { name: 'projMatrix', type: 'mat4' },
-          { name: 'foveationLUT', type: 'texture2d' }
-        ]
-      });
-    }
-    
-    this.renderStats.shaderCompileTime = performance.now() - startTime;
   }
 
   /**
    * Set the scene to render
    */
   setScene(scene: NerfScene): void {
-    if (!scene.isSceneLoaded()) {
-      throw new Error('Scene is not loaded');
+    if (!this.isInitialized) {
+      throw new Error('Renderer must be initialized before setting scene');
     }
     
     this.currentScene = scene;
@@ -230,33 +184,29 @@ export class NerfRenderer {
   }
 
   /**
-   * Start the render loop
+   * Start continuous render loop
    */
   startRenderLoop(options: RenderOptions): void {
     if (this.isRendering) return;
     
     this.isRendering = true;
-    this.frameCount = 0;
-    this.lastFrameTime = performance.now();
-    
     const renderLoop = async () => {
       if (!this.isRendering) return;
       
       try {
         await this.render(options);
+        this.animationFrame = requestAnimationFrame(renderLoop);
       } catch (error) {
-        console.error('Render error:', error);
+        console.error('Render loop error:', error);
+        this.stopRenderLoop();
       }
-      
-      this.animationFrame = requestAnimationFrame(renderLoop);
     };
     
     renderLoop();
-    console.log('Render loop started');
   }
 
   /**
-   * Stop the render loop
+   * Stop render loop
    */
   stopRenderLoop(): void {
     this.isRendering = false;
@@ -264,438 +214,135 @@ export class NerfRenderer {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
     }
-    console.log('Render loop stopped');
   }
 
   /**
-   * Enable/disable foveated rendering
+   * Update adaptive quality based on performance
    */
-  setFoveatedRendering(config: Partial<FoveationConfig>): void {
-    this.foveationConfig = { ...this.foveationConfig, ...config };
-    
-    if (this.foveationConfig.enabled) {
-      console.log(`Foveated rendering enabled: ${this.foveationConfig.levels} levels, ${this.foveationConfig.centerRadius} center radius`);
-    } else {
-      console.log('Foveated rendering disabled');
-    }
-  }
-
-  /**
-   * Update eye tracking data for foveated rendering
-   */
-  updateEyeTracking(x: number, y: number): void {
-    if (this.foveationConfig.enabled && this.foveationConfig.eyeTracking) {
-      this.eyeTrackingData = { x, y };
-    }
-  }
-
-  /**
-   * Set rendering quality level
-   */
-  setQuality(quality: 'low' | 'medium' | 'high'): void {
-    this.currentQuality = quality;
-    
-    // Update all models in the current scene
-    if (this.currentScene) {
-      for (const sceneModel of this.currentScene.getModels()) {
-        sceneModel.model.setQuality(quality);
-      }
-    }
-    
-    console.log(`Rendering quality set to: ${quality}`);
-  }
-
-  /**
-   * Enable/disable adaptive quality
-   */
-  setAdaptiveQuality(enabled: boolean): void {
-    this.adaptiveQualityEnabled = enabled;
-    console.log(`Adaptive quality ${enabled ? 'enabled' : 'disabled'}`);
-  }
-
-  /**
-   * Get current performance metrics
-   */
-  getPerformanceMetrics(): PerformanceMetrics {
-    const avgFrameTime = this.frameTimeHistory.length > 0 
-      ? this.frameTimeHistory.reduce((a, b) => a + b) / this.frameTimeHistory.length 
-      : 0;
-    
-    const avgFPS = this.fpsHistory.length > 0
-      ? this.fpsHistory.reduce((a, b) => a + b) / this.fpsHistory.length
-      : 0;
-    
-    return {
-      fps: Math.round(avgFPS * 10) / 10,
-      frameTime: Math.round(avgFrameTime * 100) / 100,
-      gpuUtilization: this.backend?.getGPUUsage() || 0,
-      memoryUsage: this.renderStats.memoryAllocated / 1024 / 1024, // MB
-      powerConsumption: this.estimatePowerConsumption(),
-      frameCount: this.frameCount,
-      averageFrameTime: avgFrameTime
-    };
-  }
-
-  /**
-   * Reset performance metrics (for testing)
-   */
-  resetPerformanceMetrics(): void {
-    this.frameCount = 0;
-    this.frameTimeHistory = [];
-    this.fpsHistory = [];
-    this.lastFrameTime = performance.now();
-  }
-
-  /**
-   * Get detailed render statistics
-   */
-  getRenderStats(): RenderStats {
-    return { ...this.renderStats };
-  }
-
-  /**
-   * Get renderer info and capabilities
-   */
-  getInfo(): any {
-    return {
-      backend: this.backend?.getInfo() || null,
-      config: this.config,
-      foveation: this.foveationConfig,
-      quality: this.currentQuality,
-      adaptiveQuality: this.adaptiveQualityEnabled,
-      initialized: this.isInitialized,
-      rendering: this.isRendering
-    };
-  }
-
-  // Private helper methods
-  
-  private prepareUniforms(options: RenderOptions): Record<string, any> {
-    const [width, height] = this.config.maxResolution;
-    
-    return {
-      viewMatrix: this.createViewMatrix(options),
-      projMatrix: this.createProjectionMatrix(options, width / height),
-      time: performance.now() / 1000,
-      resolution: [width, height],
-      foveationCenter: this.eyeTrackingData ? [this.eyeTrackingData.x, this.eyeTrackingData.y] : [0.5, 0.5],
-      foveationParams: [this.foveationConfig.centerRadius, this.foveationConfig.levels, this.foveationConfig.blendWidth, 0]
-    };
-  }
-  
-  private createViewMatrix(_options: RenderOptions): number[] {
-    // Simplified view matrix creation
-    return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-  }
-  
-  private createProjectionMatrix(options: RenderOptions, aspectRatio: number): number[] {
-    // Simplified projection matrix creation
-    const fov = options.fieldOfView * Math.PI / 180;
-    const f = 1.0 / Math.tan(fov / 2);
-    const nf = 1 / (options.near - options.far);
-    
-    return [
-      f / aspectRatio, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (options.far + options.near) * nf, -1,
-      0, 0, 2 * options.far * options.near * nf, 0
-    ];
-  }
-  
-  private async renderModel(_sceneModel: any, _options: RenderOptions): Promise<void> {
-    // Model-specific rendering logic would go here
-    this.renderStats.trianglesRendered += 1000; // Mock value
-  }
-  
-  private async applyPostProcessing(): Promise<void> {
-    // Post-processing effects (TAA, tone mapping, etc.)
-  }
-  
-  private updatePerformanceMetrics(frameTime: number): void {
-    this.frameCount++;
-    
-    // Update frame time history
-    this.frameTimeHistory.push(frameTime);
-    if (this.frameTimeHistory.length > 60) {
-      this.frameTimeHistory.shift();
-    }
-    
-    // Calculate FPS
-    const currentTime = performance.now();
-    const deltaTime = currentTime - this.lastFrameTime;
-    if (deltaTime >= 1000) { // Update FPS every second
-      const fps = this.frameCount * 1000 / deltaTime;
-      this.fpsHistory.push(fps);
-      if (this.fpsHistory.length > 10) {
-        this.fpsHistory.shift();
-      }
-      
-      this.frameCount = 0;
-      this.lastFrameTime = currentTime;
-    }
-    
-    // Update rays per second estimate
-    const [width, height] = this.config.maxResolution;
-    this.renderStats.raysPerSecond = Math.round((width * height) / (frameTime / 1000));
-  }
-  
   private updateAdaptiveQuality(): void {
-    const metrics = this.getPerformanceMetrics();
+    if (this.fpsHistory.length < 10) return;
+    
+    const avgFPS = this.fpsHistory.reduce((a, b) => a + b) / this.fpsHistory.length;
     const targetFPS = this.config.targetFPS;
     
-    if (metrics.fps < targetFPS * 0.8) {
-      // Performance is poor, lower quality
+    if (avgFPS < targetFPS * 0.85) {
+      // Performance too low, reduce quality
       if (this.currentQuality === 'high') {
-        this.setQuality('medium');
+        this.currentQuality = 'medium';
+        console.log('🔄 Adaptive quality: reduced to medium');
       } else if (this.currentQuality === 'medium') {
-        this.setQuality('low');
+        this.currentQuality = 'low';
+        console.log('🔄 Adaptive quality: reduced to low');
       }
-    } else if (metrics.fps > targetFPS * 0.95) {
-      // Performance is good, try higher quality
+    } else if (avgFPS > targetFPS * 1.1) {
+      // Performance good, can increase quality
       if (this.currentQuality === 'low') {
-        this.setQuality('medium');
+        this.currentQuality = 'medium';
+        console.log('🔄 Adaptive quality: increased to medium');
       } else if (this.currentQuality === 'medium') {
-        this.setQuality('high');
+        this.currentQuality = 'high';
+        console.log('🔄 Adaptive quality: increased to high');
       }
     }
+    
+    // Apply quality settings
+    this.applyQualitySettings();
   }
-  
-  private estimatePowerConsumption(): number {
-    // Simple power estimation based on GPU usage and quality
-    const baseWatts = this.config.powerMode === 'performance' ? 8 : 4;
-    const gpuUsage = this.backend?.getGPUUsage() || 0.5;
-    return baseWatts * gpuUsage;
+
+  /**
+   * Apply current quality settings
+   */
+  private applyQualitySettings(): void {
+    const qualityMultiplier = {
+      low: 0.5,
+      medium: 0.75,
+      high: 1.0
+    };
+    
+    const multiplier = qualityMultiplier[this.currentQuality];
+    
+    // Update resolution based on quality
+    const [maxWidth, maxHeight] = this.config.maxResolution;
+    const adjustedWidth = Math.floor(maxWidth * multiplier);
+    const adjustedHeight = Math.floor(maxHeight * multiplier);
+    
+    if (this.backend) {
+      this.backend.setResolution(adjustedWidth, adjustedHeight);
+    }
   }
-  
-  private getVertexShader(): string {
-    return `
-      struct VertexOutput {
-        @builtin(position) position: vec4<f32>,
-        @location(0) uv: vec2<f32>,
-      };
-      
-      @vertex
-      fn main(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
-        var pos = array<vec2<f32>, 6>(
-          vec2<f32>(-1.0, -1.0),
-          vec2<f32>( 1.0, -1.0),
-          vec2<f32>(-1.0,  1.0),
-          vec2<f32>( 1.0, -1.0),
-          vec2<f32>( 1.0,  1.0),
-          vec2<f32>(-1.0,  1.0)
-        );
-        
-        var output: VertexOutput;
-        output.position = vec4<f32>(pos[vertexIndex], 0.0, 1.0);
-        output.uv = pos[vertexIndex] * 0.5 + 0.5;
-        return output;
-      }
-    `;
+
+  /**
+   * Prepare uniform data for shaders
+   */
+  private prepareUniforms(options: RenderOptions): Record<string, any> {
+    return {
+      cameraPosition: new Float32Array(options.cameraPosition),
+      cameraRotation: new Float32Array(options.cameraRotation),
+      projection: this.createProjectionMatrix(options),
+      time: Date.now() / 1000,
+      quality: this.currentQuality,
+      foveationEnabled: this.foveationConfig.enabled
+    };
   }
-  
-  private getFragmentShader(): string {
-    return `
-      struct Uniforms {
-        viewMatrix: mat4x4<f32>,
-        projMatrix: mat4x4<f32>,
-        time: f32,
-        resolution: vec2<f32>,
-        foveationCenter: vec2<f32>,
-        foveationParams: vec4<f32>,
-      };
-      
-      struct NerfWeights {
-        layer1: array<f32, 3072>,    // 6 * 512 input layer weights
-        bias1: array<f32, 512>,      // bias for layer 1
-        layer2: array<f32, 262144>,  // 512 * 512 hidden layer weights
-        bias2: array<f32, 512>,      // bias for layer 2
-        layer3: array<f32, 262144>,  // 512 * 512 hidden layer weights  
-        bias3: array<f32, 512>,      // bias for layer 3
-        layer4: array<f32, 2048>,    // 512 * 4 output layer weights
-        bias4: array<f32, 4>,        // bias for output layer
-      };
-      
-      @group(0) @binding(0) var<uniform> uniforms: Uniforms;
-      @group(0) @binding(1) var<storage, read> weights: NerfWeights;
-      
-      fn positionalEncoding(pos: vec3<f32>, L: i32) -> array<f32, 60> {
-        var encoded: array<f32, 60>;
-        var idx = 0;
-        
-        // Original position
-        encoded[idx] = pos.x; idx += 1;
-        encoded[idx] = pos.y; idx += 1;
-        encoded[idx] = pos.z; idx += 1;
-        
-        // Sinusoidal encoding
-        for (var l = 0; l < L; l++) {
-          let freq = pow(2.0, f32(l));
-          encoded[idx] = sin(freq * pos.x); idx += 1;
-          encoded[idx] = cos(freq * pos.x); idx += 1;
-          encoded[idx] = sin(freq * pos.y); idx += 1;
-          encoded[idx] = cos(freq * pos.y); idx += 1;
-          encoded[idx] = sin(freq * pos.z); idx += 1;
-          encoded[idx] = cos(freq * pos.z); idx += 1;
-        }
-        
-        return encoded;
-      }
-      
-      fn relu(x: f32) -> f32 {
-        return max(0.0, x);
-      }
-      
-      fn sigmoid(x: f32) -> f32 {
-        return 1.0 / (1.0 + exp(-x));
-      }
-      
-      fn nerfNetwork(pos: vec3<f32>, dir: vec3<f32>) -> vec4<f32> {
-        // Positional encoding for position (10 levels) and direction (4 levels)
-        let pos_encoded = positionalEncoding(pos, 10);
-        let dir_encoded = positionalEncoding(dir, 4);
-        
-        // Combine position and direction (simplified - in practice they're processed separately)
-        var input: array<f32, 6>;
-        input[0] = pos.x; input[1] = pos.y; input[2] = pos.z;
-        input[3] = dir.x; input[4] = dir.y; input[5] = dir.z;
-        
-        // Layer 1: 6 -> 512
-        var layer1_out: array<f32, 512>;
-        for (var i = 0; i < 512; i++) {
-          var sum = weights.bias1[i];
-          for (var j = 0; j < 6; j++) {
-            sum += input[j] * weights.layer1[i * 6 + j];
-          }
-          layer1_out[i] = relu(sum);
-        }
-        
-        // Layer 2: 512 -> 512
-        var layer2_out: array<f32, 512>;
-        for (var i = 0; i < 512; i++) {
-          var sum = weights.bias2[i];
-          for (var j = 0; j < 512; j++) {
-            sum += layer1_out[j] * weights.layer2[i * 512 + j];
-          }
-          layer2_out[i] = relu(sum);
-        }
-        
-        // Layer 3: 512 -> 512
-        var layer3_out: array<f32, 512>;
-        for (var i = 0; i < 512; i++) {
-          var sum = weights.bias3[i];
-          for (var j = 0; j < 512; j++) {
-            sum += layer2_out[j] * weights.layer3[i * 512 + j];
-          }
-          layer3_out[i] = relu(sum);
-        }
-        
-        // Output layer: 512 -> 4 (RGBA)
-        var output: array<f32, 4>;
-        for (var i = 0; i < 4; i++) {
-          var sum = weights.bias4[i];
-          for (var j = 0; j < 512; j++) {
-            sum += layer3_out[j] * weights.layer4[i * 512 + j];
-          }
-          if (i < 3) {
-            output[i] = sigmoid(sum); // RGB values
-          } else {
-            output[i] = relu(sum);    // Alpha/density
-          }
-        }
-        
-        return vec4<f32>(output[0], output[1], output[2], output[3]);
-      }
-      
-      fn rayMarch(rayOrigin: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
-        var color = vec3<f32>(0.0);
-        var transmittance = 1.0;
-        
-        let tMin = 0.1;
-        let tMax = 6.0;
-        let numSamples = 64;
-        let stepSize = (tMax - tMin) / f32(numSamples);
-        
-        for (var i = 0; i < numSamples; i++) {
-          let t = tMin + f32(i) * stepSize;
-          let samplePos = rayOrigin + rayDir * t;
-          
-          // Query NeRF network
-          let nerfOutput = nerfNetwork(samplePos, rayDir);
-          let sampleColor = nerfOutput.rgb;
-          let density = nerfOutput.a;
-          
-          // Volume rendering equation
-          let alpha = 1.0 - exp(-density * stepSize);
-          color += transmittance * alpha * sampleColor;
-          transmittance *= (1.0 - alpha);
-          
-          // Early termination if transmittance is low
-          if (transmittance < 0.01) {
-            break;
-          }
-        }
-        
-        return color;
-      }
-      
-      @fragment
-      fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-        // Convert UV to normalized device coordinates
-        let ndc = uv * 2.0 - 1.0;
-        
-        // Create ray from camera
-        let invView = transpose(uniforms.viewMatrix);
-        let invProj = transpose(uniforms.projMatrix);
-        
-        // Ray origin (camera position)
-        let rayOrigin = (invView * vec4<f32>(0.0, 0.0, 0.0, 1.0)).xyz;
-        
-        // Ray direction
-        let rayClip = vec4<f32>(ndc.x, ndc.y, 1.0, 1.0);
-        let rayEye = invProj * rayClip;
-        let rayWorld = (invView * vec4<f32>(rayEye.xy, -1.0, 0.0)).xyz;
-        let rayDir = normalize(rayWorld);
-        
-        // Ray march through NeRF
-        let color = rayMarch(rayOrigin, rayDir);
-        
-        return vec4<f32>(color, 1.0);
-      }
-    `;
+
+  /**
+   * Create projection matrix from render options
+   */
+  private createProjectionMatrix(options: RenderOptions): Float32Array {
+    const aspect = this.config.maxResolution[0] / this.config.maxResolution[1];
+    const fov = (options.fieldOfView * Math.PI) / 180;
+    const near = options.near;
+    const far = options.far;
+    
+    const f = 1.0 / Math.tan(fov / 2);
+    const rangeInv = 1.0 / (near - far);
+    
+    return new Float32Array([
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (near + far) * rangeInv, -1,
+      0, 0, near * far * rangeInv * 2, 0
+    ]);
   }
-  
-  private getFoveatedFragmentShader(): string {
-    return `
-      struct Uniforms {
-        viewMatrix: mat4x4<f32>,
-        projMatrix: mat4x4<f32>,
-        foveationLUT: texture_2d<f32>,
-      };
-      
-      @group(0) @binding(0) var<uniform> uniforms: Uniforms;
-      @group(0) @binding(1) var textureSampler: sampler;
-      
-      @fragment
-      fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-        // Sample foveation quality from lookup texture
-        let quality = textureSample(uniforms.foveationLUT, textureSampler, uv).r;
-        
-        // Adjust ray marching steps based on quality
-        let steps = i32(8.0 * quality + 2.0);
-        
-        // Simplified foveated ray marching
-        let rayDir = normalize(vec3<f32>(uv * 2.0 - 1.0, 1.0));
-        var color = vec3<f32>(0.0);
-        
-        for (var i = 0; i < steps; i++) {
-          let t = f32(i) / f32(steps);
-          let samplePos = rayDir * t;
-          color += vec3<f32>(0.1) * (1.0 - t);
-        }
-        
-        return vec4<f32>(color, 1.0);
-      }
-    `;
+
+  /**
+   * Render a single model
+   */
+  private async renderModel(_sceneModel: any, _options: RenderOptions): Promise<void> {
+    // Placeholder - actual model rendering would happen here
+    // This would involve setting up model-specific uniforms and drawing
+    this.renderStats.trianglesRendered += 1000; // Mock data
+  }
+
+  /**
+   * Apply post-processing effects
+   */
+  private async applyPostProcessing(): Promise<void> {
+    if (!this.backend) return;
+    
+    // Apply foveated rendering if enabled
+    if (this.foveationConfig.enabled) {
+      await this.applyFoveatedRendering();
+    }
+    
+    // Apply tone mapping and gamma correction
+    await this.applyToneMapping();
+  }
+
+  /**
+   * Apply foveated rendering
+   */
+  private async applyFoveatedRendering(): Promise<void> {
+    // Placeholder for foveated rendering implementation
+    // Would reduce quality in peripheral vision
+  }
+
+  /**
+   * Apply tone mapping
+   */
+  private async applyToneMapping(): Promise<void> {
+    // Placeholder for tone mapping implementation
+    // Would apply HDR tone mapping for proper display
   }
 
   /**
@@ -731,41 +378,36 @@ export class NerfRenderer {
   }
 
   /**
-   * Render a single frame with the given camera options
-   */
-  async render(options: RenderOptions): Promise<void> {
-    if (!this.isInitialized || !this.backend) {
-      throw new Error('Renderer not initialized');
-    }
-    
-    try {
-      const startTime = performance.now();
-      
-      // Validate render options
-      this.validateRenderOptions(options);
-      
-      // Begin rendering
-      await this.backend.render(
-        options.cameraPosition,
-        options.cameraRotation,
-        options.fieldOfView
-      );
-      
-      // Update performance metrics
-      const frameTime = performance.now() - startTime;
-      this.updatePerformanceMetrics(frameTime);
-      
-    } catch (error) {
-      console.error('Render failed:', error);
-      throw new Error(`Rendering failed: ${error.message}`);
-    }
-  }
-
-  /**
    * Check if the renderer is initialized
    */
   getInitialized(): boolean {
     return this.isInitialized;
+  }
+
+  /**
+   * Get current render statistics
+   */
+  getRenderStats(): RenderStats {
+    return { ...this.renderStats };
+  }
+
+  /**
+   * Get current performance metrics
+   */
+  getPerformanceMetrics(): PerformanceMetrics {
+    const avgFrameTime = this.frameTimeHistory.length > 0 
+      ? this.frameTimeHistory.reduce((a, b) => a + b) / this.frameTimeHistory.length 
+      : 0;
+      
+    const avgFPS = avgFrameTime > 0 ? 1000 / avgFrameTime : 0;
+    
+    return {
+      fps: Math.round(avgFPS),
+      frameTime: Math.round(avgFrameTime * 100) / 100,
+      memoryUsage: Math.round(this.renderStats.memoryAllocated / 1024 / 1024),
+      drawCalls: this.renderStats.drawCalls,
+      quality: this.currentQuality
+    };
   }
 
   /**
@@ -790,32 +432,27 @@ export class NerfRenderer {
   }
 
   /**
-   * Update performance metrics with new frame data
+   * Update performance metrics
    */
   private updatePerformanceMetrics(frameTime: number): void {
-    try {
-      this.frameCount++;
-      this.frameTimeHistory.push(frameTime);
-      
-      // Keep only recent history
-      if (this.frameTimeHistory.length > 300) {
-        this.frameTimeHistory.shift();
-      }
-      
-      // Calculate FPS
-      const fps = 1000 / frameTime;
-      this.fpsHistory.push(fps);
-      
-      if (this.fpsHistory.length > 300) {
-        this.fpsHistory.shift();
-      }
-      
-      // Update render stats
-      this.renderStats.raysPerSecond = fps * 1000000; // Estimate
-      
-    } catch (error) {
-      console.error('Error updating performance metrics:', error);
+    this.frameTimeHistory.push(frameTime);
+    if (this.frameTimeHistory.length > 60) {
+      this.frameTimeHistory.shift();
     }
+    
+    // Calculate average frame time and FPS
+    const avgFrameTime = this.frameTimeHistory.reduce((a, b) => a + b) / this.frameTimeHistory.length;
+    const fps = 1000 / avgFrameTime;
+    
+    this.fpsHistory.push(fps);
+    if (this.fpsHistory.length > 30) {
+      this.fpsHistory.shift();
+    }
+    
+    // Update render stats
+    this.renderStats.raysPerSecond = Math.round(fps * 1000000); // Estimated rays per second
+    
+    this.frameCount++;
   }
 
   /**
@@ -826,18 +463,13 @@ export class NerfRenderer {
       this.stopRenderLoop();
       this.backend?.dispose();
       this.backend = null;
-      this.canvas = null;
       this.currentScene = null;
       this.isInitialized = false;
+      this.canvas = null;
       
-      // Clear performance data
-      this.frameTimeHistory = [];
-      this.fpsHistory = [];
-      this.frameCount = 0;
-      
-      console.log('NerfRenderer disposed');
+      console.log('🧹 NeRF Renderer disposed');
     } catch (error) {
-      console.error('Error disposing NerfRenderer:', error);
+      console.error('Error disposing renderer:', error);
     }
   }
 }

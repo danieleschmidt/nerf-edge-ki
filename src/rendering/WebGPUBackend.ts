@@ -544,4 +544,21 @@ export class WebGPUBackend {
     
     console.log('WebGPU backend disposed');
   }
+
+  /**
+   * Set rendering resolution
+   */
+  setResolution(width: number, height: number): void {
+    if (!this.canvas || !this.context) return;
+    
+    this.canvas.width = width;
+    this.canvas.height = height;
+    
+    // Reconfigure context with new size
+    this.context.configure({
+      device: this.device!,
+      format: this.swapChainFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT
+    });
+  }
 }
