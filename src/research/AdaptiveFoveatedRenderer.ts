@@ -29,7 +29,7 @@ export interface EyeCharacteristics {
   dominantEye: 'left' | 'right';
   trackingAccuracy: number; // Confidence level 0-1
   blinkRate: number; // blinks per minute
-  sacccadeVelocity: number; // degrees/second
+  saccadeVelocity: number; // degrees/second
   accommodation: number; // diopters
 }
 
@@ -74,7 +74,7 @@ export interface GazePrediction {
   predictedGaze: [number, number];
   confidence: number; // 0-1
   timeHorizon: number; // milliseconds ahead
-  sacccadeTarget: [number, number] | null;
+  saccadeTarget: [number, number] | null;
   fixationDuration: number; // estimated ms
 }
 
@@ -131,7 +131,7 @@ export class AdaptiveFoveatedRenderer {
       dominantEye: 'right',
       trackingAccuracy: 0.95,
       blinkRate: 15, // normal rate
-      sacccadeVelocity: 300, // degrees/second
+      saccadeVelocity: 300, // degrees/second
       accommodation: 0, // focused at distance
       ...initialEyeCharacteristics
     };
@@ -159,16 +159,16 @@ export class AdaptiveFoveatedRenderer {
     this.gazePredictor = new AIGazePredictor();
     this.perceptualModel = new HumanVisualSystemModel(this.eyeCharacteristics);
     this.contentAnalyzer = new ContentAwareAnalyzer();
-    this.renderOptimizer = new PowerAwareOptimizer();
+    this._renderOptimizer = new PowerAwareOptimizer();
     
     // Initialize adaptive foveation
-    this.adaptiveFoveation = this.calculateOptimalFoveationLevels();
+    this._adaptiveFoveation = this.calculateOptimalFoveationLevels();
     
     // Initialize maps
     const pixelCount = screenResolution[0] * screenResolution[1];
     this.qualityMap = new Float32Array(pixelCount);
-    this.motionVectorField = new Float32Array(pixelCount * 2); // x,y vectors
-    this.attentionHeatmap = new Float32Array(pixelCount);
+    this._motionVectorField = new Float32Array(pixelCount * 2); // x,y vectors
+    this._attentionHeatmap = new Float32Array(pixelCount);
     
     console.log('AdaptiveFoveatedRenderer initialized with advanced capabilities');
   }
@@ -209,7 +209,7 @@ export class AdaptiveFoveatedRenderer {
       predictedGaze: prediction.position,
       confidence: prediction.confidence,
       timeHorizon: 500, // 500ms look-ahead
-      sacccadeTarget,
+      saccadeTarget,
       fixationDuration: this.estimateFixationDuration(fixationStability)
     };
   }
@@ -536,7 +536,7 @@ export class AdaptiveFoveatedRenderer {
     const velocityMagnitude = Math.sqrt(velocity[0] * velocity[0] + velocity[1] * velocity[1]);
     
     // Saccade threshold based on eye characteristics
-    const saccadeThreshold = 0.01 * this.eyeCharacteristics.sacccadeVelocity / 300;
+    const saccadeThreshold = 0.01 * this.eyeCharacteristics.saccadeVelocity / 300;
     
     if (velocityMagnitude > saccadeThreshold) {
       // Predict saccade target

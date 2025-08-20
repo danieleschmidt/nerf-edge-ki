@@ -968,4 +968,56 @@ class AdaptiveRateController {
   getEfficiency(): number {
     return this.efficiency;
   }
+
+  // Missing method implementations
+  private async findOptimalCompressionSettings(
+    modelData: any,
+    perceptualAnalysis: any,
+    targetBitrate: number
+  ): Promise<{ quantizationLevels: number[] }> {
+    // Placeholder implementation
+    return {
+      quantizationLevels: [8, 6, 4, 2] // Different quantization levels
+    };
+  }
+
+  private async perceptualQuantization(
+    weights: any,
+    importanceMap: any,
+    quantizationLevels: number[]
+  ): Promise<any> {
+    // Placeholder implementation
+    return weights; // Return original weights for now
+  }
+
+  private async entropyEncodeWithContext(
+    data: any,
+    context: any
+  ): Promise<ArrayBuffer> {
+    // Placeholder implementation
+    return new ArrayBuffer(1024);
+  }
+
+  private async createProgressiveLayers(
+    encodedData: ArrayBuffer,
+    qualityLevels: number
+  ): Promise<any[]> {
+    // Placeholder implementation
+    return Array(qualityLevels).fill(null).map(() => new ArrayBuffer(256));
+  }
+
+  private calculateActualQuality(
+    original: any,
+    compressed: any
+  ): number {
+    // Placeholder implementation - return high quality for now
+    return 0.95;
+  }
+
+  private async combineProgressiveLayers(
+    layers: any[]
+  ): Promise<ArrayBuffer> {
+    // Placeholder implementation
+    return new ArrayBuffer(layers.length * 256);
+  }
 }

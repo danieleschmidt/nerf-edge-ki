@@ -7,6 +7,7 @@ export interface MonitoringStats {
   tasksCompleted: number;
   averageExecutionTime: number;
   totalTasks: number;
+  systemHealth?: 'healthy' | 'warning' | 'critical';
 }
 
 export interface QuantumMetrics {
@@ -14,6 +15,14 @@ export interface QuantumMetrics {
   entanglement: number;
   superposition: number;
   decoherence: number;
+  // Task-related metrics
+  activeTaskCount?: number;
+  completedTaskCount?: number;
+  failedTaskCount?: number;
+  averageCoherence?: number;
+  quantumEfficiency?: number;
+  systemPerformance?: SystemPerformanceMetrics;
+  timestamp?: number;
 }
 
 export interface SystemPerformanceMetrics {
@@ -22,6 +31,10 @@ export interface SystemPerformanceMetrics {
   gpu: number;
   bandwidth: number;
   latency: number;
+  cpuUsage?: number;
+  memoryUsage?: number;
+  gpuUsage?: number;
+  throughput?: number;
 }
 
 export class QuantumMonitor {

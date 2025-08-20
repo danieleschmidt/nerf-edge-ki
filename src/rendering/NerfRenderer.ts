@@ -699,15 +699,145 @@ export class NerfRenderer {
   }
 
   /**
+   * Load a NeRF model for rendering
+   */
+  async loadModel(model: import('../core/NerfModel').NerfModel): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('Renderer must be initialized before loading models');
+    }
+    
+    try {
+      console.log('Loading NeRF model...');
+      
+      // Validate model
+      if (!model.isLoaded()) {
+        throw new Error('Model is not loaded');
+      }
+      
+      // Load model data into GPU memory
+      const modelData = model.getNetworkData();
+      if (!modelData || modelData.byteLength === 0) {
+        throw new Error('Invalid model data');
+      }
+      
+      // Update render stats
+      this.renderStats.memoryAllocated += modelData.byteLength;
+      
+      console.log(`✅ NeRF model loaded (${(modelData.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+    } catch (error) {
+      console.error('Failed to load NeRF model:', error);
+      throw new Error(`Model loading failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Render a single frame with the given camera options
+   */
+  async render(options: RenderOptions): Promise<void> {
+    if (!this.isInitialized || !this.backend) {
+      throw new Error('Renderer not initialized');
+    }
+    
+    try {
+      const startTime = performance.now();
+      
+      // Validate render options
+      this.validateRenderOptions(options);
+      
+      // Begin rendering
+      await this.backend.render(
+        options.cameraPosition,
+        options.cameraRotation,
+        options.fieldOfView
+      );
+      
+      // Update performance metrics
+      const frameTime = performance.now() - startTime;
+      this.updatePerformanceMetrics(frameTime);
+      
+    } catch (error) {
+      console.error('Render failed:', error);
+      throw new Error(`Rendering failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check if the renderer is initialized
+   */
+  getInitialized(): boolean {
+    return this.isInitialized;
+  }
+
+  /**
+   * Validate render options
+   */
+  private validateRenderOptions(options: RenderOptions): void {
+    if (!options.cameraPosition || options.cameraPosition.length !== 3) {
+      throw new Error('Invalid camera position');
+    }
+    
+    if (!options.cameraRotation || options.cameraRotation.length !== 4) {
+      throw new Error('Invalid camera rotation quaternion');
+    }
+    
+    if (options.fieldOfView <= 0 || options.fieldOfView >= 180) {
+      throw new Error('Field of view must be between 0 and 180 degrees');
+    }
+    
+    if (options.near <= 0 || options.far <= options.near) {
+      throw new Error('Invalid near/far plane values');
+    }
+  }
+
+  /**
+   * Update performance metrics with new frame data
+   */
+  private updatePerformanceMetrics(frameTime: number): void {
+    try {
+      this.frameCount++;
+      this.frameTimeHistory.push(frameTime);
+      
+      // Keep only recent history
+      if (this.frameTimeHistory.length > 300) {
+        this.frameTimeHistory.shift();
+      }
+      
+      // Calculate FPS
+      const fps = 1000 / frameTime;
+      this.fpsHistory.push(fps);
+      
+      if (this.fpsHistory.length > 300) {
+        this.fpsHistory.shift();
+      }
+      
+      // Update render stats
+      this.renderStats.raysPerSecond = fps * 1000000; // Estimate
+      
+    } catch (error) {
+      console.error('Error updating performance metrics:', error);
+    }
+  }
+
+  /**
    * Dispose of renderer resources
    */
   dispose(): void {
-    this.stopRenderLoop();
-    this.backend?.dispose();
-    this.backend = null;
-    this.canvas = null;
-    this.currentScene = null;
-    this.isInitialized = false;
-    console.log('NerfRenderer disposed');
+    try {
+      this.stopRenderLoop();
+      this.backend?.dispose();
+      this.backend = null;
+      this.canvas = null;
+      this.currentScene = null;
+      this.isInitialized = false;
+      
+      // Clear performance data
+      this.frameTimeHistory = [];
+      this.fpsHistory = [];
+      this.frameCount = 0;
+      
+      console.log('NerfRenderer disposed');
+    } catch (error) {
+      console.error('Error disposing NerfRenderer:', error);
+    }
   }
 }

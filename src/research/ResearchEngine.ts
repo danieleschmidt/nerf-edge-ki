@@ -679,7 +679,7 @@ class NoveltyDetector {
 }
 
 class ReproductionValidator {
-  async reproduce(package: any, config: any): Promise<any> {
+  async reproduce(researchPackage: any, config: any): Promise<any> {
     // Mock reproduction attempt
     return {
       success: Math.random() > 0.2,

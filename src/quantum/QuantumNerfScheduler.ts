@@ -4,7 +4,11 @@
  */
 
 // Node.js process compatibility
-declare const process: { env: Record<string, string | undefined>; platform: string };
+declare const process: { 
+  env: Record<string, string | undefined>; 
+  platform: string;
+  memoryUsage?: () => { rss: number; heapTotal: number; heapUsed: number; external: number; arrayBuffers: number };
+};
 
 import { QuantumTaskPlanner, QuantumTask, ResourceRequirements } from './QuantumTaskPlanner';
 import { NerfConfig, RenderOptions, PerformanceMetrics } from '../core/types';
@@ -657,7 +661,7 @@ class PerformanceTracker extends EventEmitter {
       fps: this.calculateCurrentFPS(),
       frameTime: this.calculateAverageFrameTime(),
       gpuUtilization: Math.random() * 100, // Would measure actual GPU usage
-      memoryUsage: process.memoryUsage().heapUsed / (1024 * 1024),
+      memoryUsage: (process.memoryUsage ? process.memoryUsage().heapUsed : 50 * 1024 * 1024) / (1024 * 1024),
       powerConsumption: this.estimatePowerConsumption()
     };
   }

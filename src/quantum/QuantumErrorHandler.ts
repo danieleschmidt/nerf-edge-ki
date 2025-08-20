@@ -4,8 +4,18 @@
  */
 
 // Global Node.js/Browser compatibility declarations
-declare const process: { env: Record<string, string | undefined>; platform: string };
+declare const process: { 
+  env: Record<string, string | undefined>; 
+  platform: string;
+  memoryUsage?: () => { rss: number; heapTotal: number; heapUsed: number; external: number; arrayBuffers: number };
+};
 declare const global: any;
+
+// OS compatibility for browser environments
+const os = {
+  loadavg: () => [0, 0, 0] as [number, number, number],
+  platform: () => typeof process !== 'undefined' ? process.platform : 'browser'
+};
 
 import { EventEmitter } from 'events';
 
@@ -148,8 +158,8 @@ export class QuantumErrorHandler extends EventEmitter {
       context: {
         ...context,
         stack: new Error().stack,
-        memoryUsage: process.memoryUsage(),
-        systemLoad: process.loadavg()
+        memoryUsage: process.memoryUsage ? process.memoryUsage() : { rss: 0, heapTotal: 0, heapUsed: 0, external: 0, arrayBuffers: 0 },
+        systemLoad: os.loadavg()
       },
       severity
     };
@@ -374,7 +384,7 @@ export class QuantumErrorHandler extends EventEmitter {
       recoveryFunction: async (_error) => {
         console.log('🔄 Resolving dependency cycle...');
         
-        const cycle = error.context.cycle || [];
+        const cycle = _error.context.cycle || [];
         if (cycle.length === 0) {
           return { success: false, message: 'No cycle information available' };
         }

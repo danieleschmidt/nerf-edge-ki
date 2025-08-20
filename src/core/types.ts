@@ -37,6 +37,8 @@ export interface SpatialTransform {
 export interface PerformanceMetrics {
   /** Current frame rate */
   fps: number;
+  /** Current frame rate (alias for compatibility) */
+  currentFPS?: number;
   /** Frame time in milliseconds */
   frameTime: number;
   /** GPU utilization percentage */
