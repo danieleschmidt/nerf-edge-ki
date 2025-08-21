@@ -25,7 +25,7 @@ export interface NerfModelData {
 
 export class NerfModel {
   private transform: SpatialTransform;
-  private isLoaded = false;
+  private _isLoaded = false;
   private modelData: NerfModelData | null = null;
   private boundingBox: [[number, number, number], [number, number, number]];
   private quality: 'low' | 'medium' | 'high' = 'medium';
@@ -60,7 +60,7 @@ export class NerfModel {
       // Parse binary model data
       this.modelData = this.parseModelData(data);
       this.boundingBox = this.modelData.metadata.bounds;
-      this.isLoaded = true;
+      this._isLoaded = true;
       
       console.log(`Successfully loaded NeRF model: ${this.modelData.metadata.resolution.join('x')} resolution, ${this.modelData.weights.length} weights`);
     } catch (error) {
@@ -185,7 +185,7 @@ export class NerfModel {
     new Float32Array(buffer, offset).set(mockWeights);
     
     model.modelData = model.parseModelData(buffer);
-    model.isLoaded = true;
+    model._isLoaded = true;
     
     return model;
   }
@@ -251,7 +251,17 @@ export class NerfModel {
    * Check if model is loaded and ready for rendering
    */
   isModelLoaded(): boolean {
-    return this.isLoaded && this.modelData !== null;
+    return this._isLoaded && this.modelData !== null;
+  }
+
+  /**
+   * Get neural network data for GPU upload
+   */
+  getNetworkData(): ArrayBuffer | null {
+    if (!this.modelData) {
+      return null;
+    }
+    return this.modelData.weights.buffer.slice(0) as ArrayBuffer;
   }
 
   /**
@@ -347,6 +357,6 @@ export class NerfModel {
    */
   dispose(): void {
     this.modelData = null;
-    this.isLoaded = false;
+    this._isLoaded = false;
   }
 }
