@@ -1,5 +1,5 @@
 # Multi-stage production Dockerfile for NeRF Edge Kit
-FROM node:18-alpine AS base
+FROM node:24-alpine AS base
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -31,7 +31,7 @@ COPY *.config.js ./
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:24-alpine AS production
 
 # Install runtime dependencies
 RUN apk add --no-cache \
