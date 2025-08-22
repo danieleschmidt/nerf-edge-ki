@@ -62,14 +62,61 @@ export {
 // Demo System - Examples excluded from TypeScript compilation
 // export { ResearchIntegrationDemo } from '../../examples/research-integration-demo';
 
+// Hyper-Dimensional NeRF Engine - Revolutionary multi-dimensional rendering
+export {
+  HyperDimensionalNerfEngine,
+  type HyperDimension,
+  type HyperSpace,
+  type HyperSample,
+  type NeuralManifold,
+  type HyperRenderingConfig
+} from './HyperDimensionalNerfEngine';
+
+// Enhanced Temporal NeRF Prediction - Next-generation predictive rendering
+export {
+  TemporalNerfPrediction,
+  type TemporalState,
+  type PredictionResult,
+  type NeuralTrajectoryModel,
+  type TrajectoryPattern
+} from './TemporalNerfPrediction';
+
+// Robust Hyper-Dimensional System - Enterprise-grade error handling and validation
+export {
+  RobustHyperDimensionalSystem,
+  type SystemHealthMetrics,
+  type ValidationResult,
+  type ValidationError,
+  type ValidationWarning,
+  type ErrorRecoveryPlan,
+  type SystemGuards
+} from './RobustHyperDimensionalSystem';
+
+// Quantum Performance Optimizer - Revolutionary performance enhancement system
+export {
+  QuantumPerformanceOptimizer,
+  type QuantumPerformanceConfig,
+  type PerformanceMetrics,
+  type CacheEntry,
+  type OptimizationStrategy,
+  type OptimizationContext,
+  type OptimizationResult,
+  type ResourceInfo,
+  type PredictiveTask
+} from './QuantumPerformanceOptimizer';
+
 // Version information
-export const RESEARCH_VERSION = '1.0.0';
-export const RESEARCH_BUILD_DATE = '2025-08-07';
+export const RESEARCH_VERSION = '3.0.0';
+export const RESEARCH_BUILD_DATE = '2025-08-22';
 export const RESEARCH_COMPONENTS = [
   'AdvancedNerfOptimizer',
   'QuantumNeuralAccelerator', 
   'SpatialSyncProtocol',
   'AdaptiveFoveatedRenderer',
   'AdaptiveNeuralCompressor',
-  'ResearchIntegrationHub'
+  'ResearchIntegrationHub',
+  'HyperDimensionalNerfEngine',
+  'TemporalNerfPrediction',
+  'RobustHyperDimensionalSystem',
+  'QuantumPerformanceOptimizer'
 ] as const;
