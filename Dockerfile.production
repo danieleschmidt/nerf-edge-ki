@@ -1,102 +1,181 @@
-# Multi-stage production Dockerfile for NeRF Edge Kit
-FROM node:24-alpine AS base
+# Production Dockerfile for NeRF Edge Kit - Optimized for Spatial Computing Workloads
+# Multi-stage build with GPU acceleration support and security hardening
 
-# Install system dependencies
+# Stage 1: Build environment with native compilation support
+FROM node:24-alpine AS builder
+
+# Install system dependencies for native modules and GPU drivers
 RUN apk add --no-cache \
     python3 \
     make \
     g++ \
     linux-headers \
     curl \
-    ca-certificates
+    ca-certificates \
+    git \
+    pkgconfig \
+    mesa-dev \
+    vulkan-loader-dev \
+    vulkan-headers
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files for dependency resolution
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
+COPY webpack.config.js ./
+COPY jest*.config.js ./
 
-# Development stage for building
-FROM base AS development
-RUN npm ci --include=dev
+# Install all dependencies (including dev for build)
+RUN npm ci --include=dev --silent
 
-# Copy source code
+# Copy source code and configuration
 COPY src/ ./src/
 COPY web/ ./web/
-COPY tests/ ./tests/
+COPY examples/ ./examples/
 COPY benchmarks/ ./benchmarks/
-COPY *.config.js ./
+COPY python/ ./python/
+COPY ios/ ./ios/
 
-# Build the application
+# Build the application with production optimizations
+ENV NODE_ENV=production
 RUN npm run build
 
-# Production stage
+# Stage 2: Production runtime with GPU acceleration
 FROM node:24-alpine AS production
 
-# Install runtime dependencies
+# Install runtime dependencies for GPU acceleration and spatial computing
 RUN apk add --no-cache \
+    mesa-gl \
+    mesa-vulkan-drivers \
+    vulkan-loader \
+    libdrm \
     curl \
     ca-certificates \
-    dumb-init
+    dumb-init \
+    tini
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+# Create non-root user for security hardening
+RUN addgroup -g 1001 -S nerfkit && \
+    adduser -S nerfkit -u 1001 -G nerfkit
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy built application with proper ownership
+COPY --from=builder --chown=nerfkit:nerfkit /app/dist ./dist
+COPY --from=builder --chown=nerfkit:nerfkit /app/web/dist ./web/dist
+COPY --from=builder --chown=nerfkit:nerfkit /app/node_modules ./node_modules
+COPY --from=builder --chown=nerfkit:nerfkit /app/package*.json ./
 
-# Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+# Copy production configuration files
+COPY --chown=nerfkit:nerfkit nginx.prod.conf ./nginx.conf
+COPY --chown=nerfkit:nerfkit monitoring/ ./monitoring/
 
-# Copy built application from development stage
-COPY --from=development --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=development --chown=nextjs:nodejs /app/web/dist ./web/dist
+# Create application directories with proper permissions
+RUN mkdir -p logs cache ssl tmp uploads models && \
+    chown -R nerfkit:nerfkit logs cache ssl tmp uploads models && \
+    chmod 755 logs cache ssl tmp uploads models
 
-# Copy production configuration
-COPY --chown=nextjs:nodejs .env.production ./.env
-COPY --chown=nextjs:nodejs nginx.conf ./
-COPY --chown=nextjs:nodejs monitoring/ ./monitoring/
+# Production environment variables optimized for spatial computing
+ENV NODE_ENV=production \
+    GPU_ACCELERATION=enabled \
+    WEBGPU_BACKEND=vulkan \
+    VULKAN_SDK_PATH=/usr \
+    MEMORY_POOL_SIZE=4096 \
+    MAX_CONCURRENT_RENDERS=12 \
+    FOVEATED_RENDERING=enabled \
+    NEURAL_COMPRESSION=enabled \
+    SPATIAL_SYNC_ENABLED=true \
+    QUANTUM_OPTIMIZATION=enabled \
+    ENABLE_TELEMETRY=true \
+    LOG_LEVEL=info \
+    SECURITY_SCANNING=enabled \
+    COMPLIANCE_VALIDATION=enabled \
+    MULTI_USER_SUPPORT=enabled \
+    PREDICTIVE_CACHING=enabled
 
-# Create necessary directories
-RUN mkdir -p logs cache ssl && \
-    chown -R nextjs:nodejs logs cache ssl
-
-# Health check script
-COPY --chown=nextjs:nodejs <<'EOF' /app/healthcheck.js
+# Enhanced health check for spatial computing services
+COPY --chown=nerfkit:nerfkit <<'EOF' /app/health-check.js
 const http = require('http');
-const options = {
-  host: 'localhost',
-  port: process.env.PORT || 8080,
-  path: '/health',
-  timeout: 2000,
+
+const performHealthCheck = () => {
+  const checks = [
+    { name: 'API', path: '/health', port: 8080 },
+    { name: 'WebGPU', path: '/health/gpu', port: 8080 },
+    { name: 'Spatial', path: '/health/spatial', port: 8080 },
+    { name: 'Security', path: '/health/security', port: 8080 }
+  ];
+
+  let completedChecks = 0;
+  let failures = 0;
+
+  checks.forEach(check => {
+    const options = {
+      host: 'localhost',
+      port: check.port,
+      path: check.path,
+      timeout: 3000,
+    };
+
+    const request = http.request(options, (res) => {
+      console.log(`${check.name} Health Check: ${res.statusCode}`);
+      if (res.statusCode !== 200) failures++;
+      
+      completedChecks++;
+      if (completedChecks === checks.length) {
+        const exitCode = failures > 0 ? 1 : 0;
+        console.log(`Health Check Complete: ${failures}/${checks.length} failed`);
+        process.exit(exitCode);
+      }
+    });
+
+    request.on('error', (err) => {
+      console.log(`${check.name} Health Check ERROR:`, err.message);
+      failures++;
+      completedChecks++;
+      
+      if (completedChecks === checks.length) {
+        console.log(`Health Check Complete: ${failures}/${checks.length} failed`);
+        process.exit(1);
+      }
+    });
+
+    request.setTimeout(3000, () => {
+      console.log(`${check.name} Health Check: Timeout`);
+      request.destroy();
+      failures++;
+      completedChecks++;
+      
+      if (completedChecks === checks.length) {
+        process.exit(1);
+      }
+    });
+
+    request.end();
+  });
 };
-const request = http.request(options, (res) => {
-  console.log(`STATUS: ${res.statusCode}`);
-  process.exitCode = (res.statusCode === 200) ? 0 : 1;
-  process.exit();
-});
-request.on('error', (err) => {
-  console.log('ERROR', err);
-  process.exit(1);
-});
-request.end();
+
+performHealthCheck();
 EOF
 
-# Expose ports
-EXPOSE 8080 8443
+# Security hardening - remove unnecessary files and set permissions
+RUN rm -rf /var/cache/apk/* /tmp/* && \
+    chmod 755 /app/health-check.js && \
+    find /app -type f -name "*.js" -exec chmod 644 {} \; && \
+    find /app -type d -exec chmod 755 {} \;
 
-# Switch to non-root user
-USER nextjs
+# Expose ports for NeRF services
+EXPOSE 8080 8443 9090 9091
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD node /app/healthcheck.js
+# Switch to non-privileged user
+USER nerfkit
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+# Comprehensive health check for spatial computing stack
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
+    CMD node /app/health-check.js
 
-# Start the application
-CMD ["node", "dist/server.js"]
+# Use tini for proper signal handling and process reaping
+ENTRYPOINT ["tini", "--"]
+
+# Start the NeRF Edge Kit server with production optimizations
+CMD ["node", "--max-old-space-size=8192", "--optimize-for-size", "dist/server.js"]

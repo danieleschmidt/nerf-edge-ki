@@ -1,0 +1,356 @@
+# Kubernetes Deployment Configuration for NeRF Edge Kit
+# Production-ready deployment with GPU support and auto-scaling
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nerf-edge-kit
+  labels:
+    app: nerf-edge-kit
+    environment: production
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nerf-config
+  namespace: nerf-edge-kit
+data:
+  NODE_ENV: "production"
+  GPU_ACCELERATION: "enabled"
+  WEBGPU_BACKEND: "vulkan"
+  MEMORY_POOL_SIZE: "4096"
+  MAX_CONCURRENT_RENDERS: "12"
+  FOVEATED_RENDERING: "enabled"
+  NEURAL_COMPRESSION: "enabled"
+  SPATIAL_SYNC_ENABLED: "true"
+  QUANTUM_OPTIMIZATION: "enabled"
+  SECURITY_SCANNING: "enabled"
+  COMPLIANCE_VALIDATION: "enabled"
+  MULTI_USER_SUPPORT: "enabled"
+  PROMETHEUS_METRICS_ENABLED: "true"
+  LOG_LEVEL: "info"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nerf-secrets
+  namespace: nerf-edge-kit
+type: Opaque
+stringData:
+  REDIS_PASSWORD: "your-redis-password"
+  JWT_SECRET: "your-jwt-secret"
+  ENCRYPTION_KEY: "your-encryption-key"
+  DATABASE_URL: "postgresql://user:password@postgres:5432/nerfkit"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nerf-edge-kit
+  namespace: nerf-edge-kit
+  labels:
+    app: nerf-edge-kit
+    version: v4.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
+  selector:
+    matchLabels:
+      app: nerf-edge-kit
+  template:
+    metadata:
+      labels:
+        app: nerf-edge-kit
+        version: v4.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9090"
+    spec:
+      serviceAccountName: nerf-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: nerf-edge-kit
+        image: nerf-edge-kit:production
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        - containerPort: 9091
+          name: health-metrics
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: nerf-config
+        - secretRef:
+            name: nerf-secrets
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+            nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: cache-volume
+          mountPath: /app/cache
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: models-volume
+          mountPath: /app/models
+        - name: ssl-certs
+          mountPath: /app/ssl
+          readOnly: true
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: logs-volume
+        emptyDir:
+          sizeLimit: 5Gi
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: nerf-models-pvc
+      - name: ssl-certs
+        secret:
+          secretName: nerf-tls-certs
+      nodeSelector:
+        accelerator: nvidia-tesla-v100
+        kubernetes.io/arch: amd64
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - nerf-edge-kit
+              topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nerf-edge-kit-service
+  namespace: nerf-edge-kit
+  labels:
+    app: nerf-edge-kit
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "9090"
+spec:
+  selector:
+    app: nerf-edge-kit
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8443
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nerf-edge-kit-ingress
+  namespace: nerf-edge-kit
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/websocket-services: "nerf-edge-kit-service"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - nerf.your-domain.com
+    secretName: nerf-tls-secret
+  rules:
+  - host: nerf.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nerf-edge-kit-service
+            port:
+              number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nerf-edge-kit-hpa
+  namespace: nerf-edge-kit
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nerf-edge-kit
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nerf-service-account
+  namespace: nerf-edge-kit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nerf-role
+  namespace: nerf-edge-kit
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nerf-role-binding
+  namespace: nerf-edge-kit
+subjects:
+- kind: ServiceAccount
+  name: nerf-service-account
+  namespace: nerf-edge-kit
+roleRef:
+  kind: Role
+  name: nerf-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nerf-models-pvc
+  namespace: nerf-edge-kit
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nerf-edge-kit-pdb
+  namespace: nerf-edge-kit
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: nerf-edge-kit

@@ -105,9 +105,30 @@ export {
   type PredictiveTask
 } from './QuantumPerformanceOptimizer';
 
+// Breakthrough Neural Codec Engine - Revolutionary compression and transmission
+export {
+  BreakthroughNeuralCodecEngine,
+  type PerceptualImportanceMap,
+  type QuantumEncodingState,
+  type NeuralCodecConfig,
+  type CompressionResult,
+  type DecompressionResult
+} from './BreakthroughNeuralCodecEngine';
+
+// Novel Spatial Awareness Engine - Revolutionary multi-user spatial computing
+export {
+  NovelSpatialAwarenessEngine,
+  type SpatialAnchor,
+  type SemanticObject,
+  type SpatialUser,
+  type PredictiveSpatialModel,
+  type SpatialAwarenessConfig,
+  type SpatialSyncMessage
+} from './NovelSpatialAwarenessEngine';
+
 // Version information
-export const RESEARCH_VERSION = '3.0.0';
-export const RESEARCH_BUILD_DATE = '2025-08-22';
+export const RESEARCH_VERSION = '4.0.0';
+export const RESEARCH_BUILD_DATE = '2025-08-23';
 export const RESEARCH_COMPONENTS = [
   'AdvancedNerfOptimizer',
   'QuantumNeuralAccelerator', 
@@ -118,5 +139,7 @@ export const RESEARCH_COMPONENTS = [
   'HyperDimensionalNerfEngine',
   'TemporalNerfPrediction',
   'RobustHyperDimensionalSystem',
-  'QuantumPerformanceOptimizer'
+  'QuantumPerformanceOptimizer',
+  'BreakthroughNeuralCodecEngine',
+  'NovelSpatialAwarenessEngine'
 ] as const;
