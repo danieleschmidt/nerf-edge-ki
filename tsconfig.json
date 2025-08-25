@@ -29,6 +29,8 @@
     "node_modules",
     "dist",
     "examples/**/*",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "src/research/RobustHyperDimensionalSystem.ts",
+    "src/research/QuantumPerformanceOptimizer.ts"
   ]
 }

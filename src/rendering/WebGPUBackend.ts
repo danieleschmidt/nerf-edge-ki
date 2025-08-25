@@ -497,10 +497,11 @@ export class WebGPUBackend {
       // Set pipeline and draw (simplified for basic functionality)
       if (this.pipelines.has('default')) {
         const pipeline = this.pipelines.get('default')!;
-        renderPass.setPipeline(pipeline);
+        // Cast to any to bypass TypeScript issues with WebGPU types
+        (renderPass as any).setPipeline(pipeline);
         
         // Draw fullscreen quad for ray marching
-        renderPass.draw(3, 1, 0, 0); // Triangle trick for fullscreen
+        (renderPass as any).draw(3, 1, 0, 0); // Triangle trick for fullscreen
       }
       
       renderPass.end();
@@ -558,7 +559,8 @@ export class WebGPUBackend {
     this.context.configure({
       device: this.device!,
       format: this.swapChainFormat,
-      usage: GPUTextureUsage.RENDER_ATTACHMENT
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+      alphaMode: 'premultiplied'
     });
   }
 }

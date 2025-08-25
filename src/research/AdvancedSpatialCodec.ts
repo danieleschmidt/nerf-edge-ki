@@ -353,8 +353,8 @@ class SpatialHashGrid {
     min: [number, number, number];
     max: [number, number, number];
   } {
-    let min = [Infinity, Infinity, Infinity];
-    let max = [-Infinity, -Infinity, -Infinity];
+    const min = [Infinity, Infinity, Infinity];
+    const max = [-Infinity, -Infinity, -Infinity];
 
     for (const feature of features) {
       min[0] = Math.min(min[0], feature.position[0]);

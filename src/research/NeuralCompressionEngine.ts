@@ -514,7 +514,7 @@ export class NeuralCompressionEngine {
   }
 
   private parseDecodedOutput(output: Float32Array): NeRFSample {
-    let offset = 0;
+    const offset = 0;
     
     return {
       position: output.slice(offset, offset + 3),
