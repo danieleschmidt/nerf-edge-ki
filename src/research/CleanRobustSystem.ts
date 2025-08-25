@@ -1,1 +1,373 @@
-/**\n * Clean Robust Hyper-Dimensional System - Fixed version\n */\n\nimport { HyperDimensionalNerfEngine, type HyperSample, type HyperRenderingConfig } from './HyperDimensionalNerfEngine';\nimport { TemporalNerfPrediction, type TemporalState } from './TemporalNerfPrediction';\n\nexport interface SystemHealthMetrics {\n  hyperDimensionalHealth: number;\n  temporalPredictionHealth: number;\n  quantumCoherenceHealth: number;\n  memoryHealth: number;\n  performanceHealth: number;\n  overallHealth: number;\n  criticalErrors: number;\n  warnings: number;\n  lastHealthCheck: number;\n}\n\nexport interface ValidationResult {\n  isValid: boolean;\n  errors: ValidationError[];\n  warnings: ValidationWarning[];\n  severity: 'low' | 'medium' | 'high' | 'critical';\n  recommendedActions: string[];\n}\n\nexport interface ValidationError {\n  code: string;\n  message: string;\n  component: string;\n  severity: 'medium' | 'high' | 'critical';\n  timestamp: number;\n  stackTrace?: string;\n  context?: Record<string, any>;\n}\n\nexport interface ValidationWarning {\n  code: string;\n  message: string;\n  component: string;\n  timestamp: number;\n  context?: Record<string, any>;\n}\n\nexport interface SystemGuards {\n  maxMemoryUsage: number;\n  maxDimensionCount: number;\n  maxSampleCount: number;\n  maxInferenceTime: number;\n  maxCoherenceDeviation: number;\n  emergencyFallbackEnabled: boolean;\n}\n\nexport class CleanRobustSystem {\n  private systemHealth: SystemHealthMetrics;\n  private guards: SystemGuards;\n  private errorHistory: ValidationError[] = [];\n  private warningHistory: ValidationWarning[] = [];\n\n  constructor(\n    private hyperEngine: HyperDimensionalNerfEngine,\n    private temporalPredictor: TemporalNerfPrediction,\n    guards?: Partial<SystemGuards>\n  ) {\n    this.guards = {\n      maxMemoryUsage: 4096,\n      maxDimensionCount: 100,\n      maxSampleCount: 1024,\n      maxInferenceTime: 50,\n      maxCoherenceDeviation: 0.5,\n      emergencyFallbackEnabled: true,\n      ...guards\n    };\n    \n    this.initializeSystemHealth();\n    console.log('🛡️ Clean Robust System initialized');\n  }\n\n  async robustHyperDimensionalSample(\n    basePosition: [number, number, number],\n    rayDirection: [number, number, number],\n    temporalContext?: number,\n    perspectiveId?: number,\n    semanticQuery?: string,\n    sampleCount: number = 128\n  ): Promise<{ samples: HyperSample[]; validation: ValidationResult }> {\n    const startTime = performance.now();\n    \n    try {\n      // Input validation\n      const inputValidation = this.validateInputs({\n        basePosition,\n        rayDirection,\n        temporalContext,\n        perspectiveId,\n        semanticQuery,\n        sampleCount\n      });\n      \n      if (!inputValidation.isValid && inputValidation.severity === 'critical') {\n        throw new Error(`Critical validation failed: ${inputValidation.errors.map(e => e.message).join(', ')}`);\n      }\n      \n      // Enforce guards\n      const safeSampleCount = Math.min(sampleCount, this.guards.maxSampleCount);\n      if (safeSampleCount !== sampleCount) {\n        this.recordWarning({\n          code: 'SAMPLE_COUNT_LIMITED',\n          message: `Sample count reduced from ${sampleCount} to ${safeSampleCount}`,\n          component: 'CleanRobustSystem',\n          timestamp: Date.now()\n        });\n      }\n      \n      // Execute sampling\n      const samples = await this.hyperEngine.hyperDimensionalSample(\n        basePosition,\n        rayDirection,\n        temporalContext,\n        perspectiveId,\n        semanticQuery,\n        safeSampleCount\n      );\n      \n      // Validate output\n      const outputValidation = this.validateHyperSamples(samples);\n      \n      return { samples, validation: outputValidation };\n      \n    } catch (error) {\n      this.recordError({\n        code: 'HYPER_SAMPLE_FAILED',\n        message: error instanceof Error ? error.message : 'Unknown error',\n        component: 'HyperDimensionalNerfEngine',\n        severity: 'high',\n        timestamp: Date.now()\n      });\n      \n      throw error;\n    }\n  }\n\n  private validateInputs(inputs: any): ValidationResult {\n    const errors: ValidationError[] = [];\n    const warnings: ValidationWarning[] = [];\n    \n    // Validate base position\n    if (!Array.isArray(inputs.basePosition) || inputs.basePosition.length !== 3) {\n      errors.push({\n        code: 'INVALID_BASE_POSITION',\n        message: 'Base position must be a 3-element array',\n        component: 'InputValidation',\n        severity: 'critical',\n        timestamp: Date.now()\n      });\n    }\n    \n    // Validate ray direction\n    if (!Array.isArray(inputs.rayDirection) || inputs.rayDirection.length !== 3) {\n      errors.push({\n        code: 'INVALID_RAY_DIRECTION',\n        message: 'Ray direction must be a 3-element array',\n        component: 'InputValidation',\n        severity: 'critical',\n        timestamp: Date.now()\n      });\n    }\n    \n    // Validate sample count\n    if (inputs.sampleCount <= 0 || inputs.sampleCount > this.guards.maxSampleCount) {\n      errors.push({\n        code: 'INVALID_SAMPLE_COUNT',\n        message: `Sample count ${inputs.sampleCount} outside valid range`,\n        component: 'InputValidation',\n        severity: 'high',\n        timestamp: Date.now()\n      });\n    }\n    \n    const severity = errors.some(e => e.severity === 'critical') ? 'critical' :\n                    errors.some(e => e.severity === 'high') ? 'high' :\n                    errors.length > 0 ? 'medium' : 'low';\n    \n    return {\n      isValid: errors.length === 0,\n      errors,\n      warnings,\n      severity,\n      recommendedActions: this.generateRecommendedActions(errors, warnings)\n    };\n  }\n\n  private validateHyperSamples(samples: HyperSample[]): ValidationResult {\n    const errors: ValidationError[] = [];\n    const warnings: ValidationWarning[] = [];\n    \n    if (!Array.isArray(samples) || samples.length === 0) {\n      errors.push({\n        code: 'EMPTY_SAMPLES',\n        message: 'No samples generated',\n        component: 'HyperSampleValidation',\n        severity: 'critical',\n        timestamp: Date.now()\n      });\n      \n      return {\n        isValid: false,\n        errors,\n        warnings,\n        severity: 'critical',\n        recommendedActions: ['Check engine configuration']\n      };\n    }\n    \n    // Validate sample properties\n    const coherenceValues: number[] = [];\n    \n    for (let i = 0; i < samples.length; i++) {\n      const sample = samples[i];\n      \n      if (!sample.coordinates || !sample.weights || sample.coherence === undefined) {\n        errors.push({\n          code: 'INVALID_SAMPLE_STRUCTURE',\n          message: `Sample ${i} missing required properties`,\n          component: 'HyperSampleValidation',\n          severity: 'high',\n          timestamp: Date.now()\n        });\n        continue;\n      }\n      \n      if (sample.coherence < 0 || sample.coherence > 1) {\n        errors.push({\n          code: 'INVALID_COHERENCE_RANGE',\n          message: `Sample ${i} coherence outside [0,1] range`,\n          component: 'HyperSampleValidation',\n          severity: 'medium',\n          timestamp: Date.now()\n        });\n      }\n      \n      coherenceValues.push(sample.coherence);\n    }\n    \n    // Statistical validation\n    if (coherenceValues.length > 1) {\n      const avgCoherence = coherenceValues.reduce((sum, c) => sum + c, 0) / coherenceValues.length;\n      \n      if (avgCoherence < 0.3) {\n        warnings.push({\n          code: 'LOW_AVERAGE_COHERENCE',\n          message: `Average coherence ${avgCoherence.toFixed(3)} is low`,\n          component: 'HyperSampleValidation',\n          timestamp: Date.now()\n        });\n      }\n    }\n    \n    const severity = errors.some(e => e.severity === 'critical') ? 'critical' :\n                    errors.some(e => e.severity === 'high') ? 'high' :\n                    errors.length > 0 ? 'medium' : 'low';\n    \n    return {\n      isValid: errors.length === 0,\n      errors,\n      warnings,\n      severity,\n      recommendedActions: this.generateRecommendedActions(errors, warnings)\n    };\n  }\n\n  async performHealthCheck(): Promise<SystemHealthMetrics> {\n    try {\n      const hyperStats = this.hyperEngine.getHyperStats();\n      const temporalStats = this.temporalPredictor.getStats();\n      \n      const hyperHealth = Math.min(1, hyperStats.quantumCoherence + 0.3);\n      const temporalHealth = Math.min(1, temporalStats.estimatedAccuracy + 0.2);\n      \n      this.systemHealth = {\n        hyperDimensionalHealth: hyperHealth,\n        temporalPredictionHealth: temporalHealth,\n        quantumCoherenceHealth: hyperStats.quantumCoherence,\n        memoryHealth: 0.85,\n        performanceHealth: 0.9,\n        overallHealth: (hyperHealth + temporalHealth + 0.85 + 0.9) / 4,\n        criticalErrors: this.errorHistory.filter(e => e.severity === 'critical').length,\n        warnings: this.warningHistory.length,\n        lastHealthCheck: Date.now()\n      };\n      \n      return this.systemHealth;\n    } catch (error) {\n      console.error('Health check failed:', error);\n      return this.systemHealth;\n    }\n  }\n\n  private initializeSystemHealth(): void {\n    this.systemHealth = {\n      hyperDimensionalHealth: 1.0,\n      temporalPredictionHealth: 1.0,\n      quantumCoherenceHealth: 1.0,\n      memoryHealth: 1.0,\n      performanceHealth: 1.0,\n      overallHealth: 1.0,\n      criticalErrors: 0,\n      warnings: 0,\n      lastHealthCheck: Date.now()\n    };\n  }\n\n  private recordError(error: ValidationError): void {\n    this.errorHistory.push(error);\n    if (this.errorHistory.length > 1000) {\n      this.errorHistory = this.errorHistory.slice(-500);\n    }\n    console.error(`❌ Error: [${error.code}] ${error.message}`);\n  }\n\n  private recordWarning(warning: ValidationWarning): void {\n    this.warningHistory.push(warning);\n    if (this.warningHistory.length > 1000) {\n      this.warningHistory = this.warningHistory.slice(-500);\n    }\n    console.warn(`⚠️ Warning: [${warning.code}] ${warning.message}`);\n  }\n\n  private generateRecommendedActions(errors: ValidationError[], warnings: ValidationWarning[]): string[] {\n    const actions: string[] = [];\n    \n    if (errors.some(e => e.code === 'INVALID_BASE_POSITION')) {\n      actions.push('Verify input position coordinates');\n    }\n    \n    if (warnings.some(w => w.code === 'LOW_AVERAGE_COHERENCE')) {\n      actions.push('Check quantum coherence settings');\n    }\n    \n    if (actions.length === 0) {\n      actions.push('Monitor system performance');\n    }\n    \n    return actions;\n  }\n\n  getSystemHealth(): SystemHealthMetrics {\n    return { ...this.systemHealth };\n  }\n\n  getErrorHistory(): ValidationError[] {\n    return [...this.errorHistory];\n  }\n\n  getWarningHistory(): ValidationWarning[] {\n    return [...this.warningHistory];\n  }\n\n  clearHistory(): void {\n    this.errorHistory = [];\n    this.warningHistory = [];\n  }\n\n  updateGuards(newGuards: Partial<SystemGuards>): void {\n    this.guards = { ...this.guards, ...newGuards };\n  }\n\n  dispose(): void {\n    this.clearHistory();\n    console.log('♻️ Clean Robust System disposed');\n  }\n}\n\nexport default CleanRobustSystem;"
+/**
+ * Clean Robust Hyper-Dimensional System - Fixed version
+ */
+
+import { HyperDimensionalNerfEngine, type HyperSample, type HyperRenderingConfig } from './HyperDimensionalNerfEngine';
+import { TemporalNerfPrediction, type TemporalState } from './TemporalNerfPrediction';
+
+export interface SystemHealthMetrics {
+  hyperDimensionalHealth: number;
+  temporalPredictionHealth: number;
+  quantumCoherenceHealth: number;
+  memoryHealth: number;
+  performanceHealth: number;
+  overallHealth: number;
+  criticalErrors: number;
+  warnings: number;
+  lastHealthCheck: number;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  recommendedActions: string[];
+}
+
+export interface ValidationError {
+  code: string;
+  message: string;
+  component: string;
+  severity: 'medium' | 'high' | 'critical';
+  timestamp: number;
+  stackTrace?: string;
+  context?: Record<string, any>;
+}
+
+export interface ValidationWarning {
+  code: string;
+  message: string;
+  component: string;
+  timestamp: number;
+  context?: Record<string, any>;
+}
+
+export interface SystemGuards {
+  maxMemoryUsage: number;
+  maxDimensionCount: number;
+  maxSampleCount: number;
+  maxInferenceTime: number;
+  maxCoherenceDeviation: number;
+  emergencyFallbackEnabled: boolean;
+}
+
+export class CleanRobustSystem {
+  private systemHealth: SystemHealthMetrics;
+  private guards: SystemGuards;
+  private errorHistory: ValidationError[] = [];
+  private warningHistory: ValidationWarning[] = [];
+
+  constructor(
+    private hyperEngine: HyperDimensionalNerfEngine,
+    private temporalPredictor: TemporalNerfPrediction,
+    guards?: Partial<SystemGuards>
+  ) {
+    this.guards = {
+      maxMemoryUsage: 4096,
+      maxDimensionCount: 100,
+      maxSampleCount: 1024,
+      maxInferenceTime: 50,
+      maxCoherenceDeviation: 0.5,
+      emergencyFallbackEnabled: true,
+      ...guards
+    };
+    
+    this.initializeSystemHealth();
+    console.log('🛡️ Clean Robust System initialized');
+  }
+
+  async robustHyperDimensionalSample(
+    basePosition: [number, number, number],
+    rayDirection: [number, number, number],
+    temporalContext?: number,
+    perspectiveId?: number,
+    semanticQuery?: string,
+    sampleCount: number = 128
+  ): Promise<{ samples: HyperSample[]; validation: ValidationResult }> {
+    try {
+      // Input validation
+      const inputValidation = this.validateInputs({
+        basePosition,
+        rayDirection,
+        temporalContext,
+        perspectiveId,
+        semanticQuery,
+        sampleCount
+      });
+      
+      if (!inputValidation.isValid && inputValidation.severity === 'critical') {
+        throw new Error(`Critical validation failed: ${inputValidation.errors.map(e => e.message).join(', ')}`);
+      }
+      
+      // Enforce guards
+      const safeSampleCount = Math.min(sampleCount, this.guards.maxSampleCount);
+      if (safeSampleCount !== sampleCount) {
+        this.recordWarning({
+          code: 'SAMPLE_COUNT_LIMITED',
+          message: `Sample count reduced from ${sampleCount} to ${safeSampleCount}`,
+          component: 'CleanRobustSystem',
+          timestamp: Date.now()
+        });
+      }
+      
+      // Execute sampling
+      const samples = await this.hyperEngine.hyperDimensionalSample(
+        basePosition,
+        rayDirection,
+        temporalContext,
+        perspectiveId,
+        semanticQuery,
+        safeSampleCount
+      );
+      
+      // Validate output
+      const outputValidation = this.validateHyperSamples(samples);
+      
+      return { samples, validation: outputValidation };
+      
+    } catch (error) {
+      this.recordError({
+        code: 'HYPER_SAMPLE_FAILED',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        component: 'HyperDimensionalNerfEngine',
+        severity: 'high',
+        timestamp: Date.now()
+      });
+      
+      throw error;
+    }
+  }
+
+  private validateInputs(inputs: any): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
+    
+    // Validate base position
+    if (!Array.isArray(inputs.basePosition) || inputs.basePosition.length !== 3) {
+      errors.push({
+        code: 'INVALID_BASE_POSITION',
+        message: 'Base position must be a 3-element array',
+        component: 'InputValidation',
+        severity: 'critical',
+        timestamp: Date.now()
+      });
+    }
+    
+    // Validate ray direction
+    if (!Array.isArray(inputs.rayDirection) || inputs.rayDirection.length !== 3) {
+      errors.push({
+        code: 'INVALID_RAY_DIRECTION',
+        message: 'Ray direction must be a 3-element array',
+        component: 'InputValidation',
+        severity: 'critical',
+        timestamp: Date.now()
+      });
+    }
+    
+    // Validate sample count
+    if (inputs.sampleCount <= 0 || inputs.sampleCount > this.guards.maxSampleCount) {
+      errors.push({
+        code: 'INVALID_SAMPLE_COUNT',
+        message: `Sample count ${inputs.sampleCount} outside valid range`,
+        component: 'InputValidation',
+        severity: 'high',
+        timestamp: Date.now()
+      });
+    }
+    
+    const severity = errors.some(e => e.severity === 'critical') ? 'critical' :
+                    errors.some(e => e.severity === 'high') ? 'high' :
+                    errors.length > 0 ? 'medium' : 'low';
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      severity,
+      recommendedActions: this.generateRecommendedActions(errors, warnings)
+    };
+  }
+
+  private validateHyperSamples(samples: HyperSample[]): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
+    
+    if (!Array.isArray(samples) || samples.length === 0) {
+      errors.push({
+        code: 'EMPTY_SAMPLES',
+        message: 'No samples generated',
+        component: 'HyperSampleValidation',
+        severity: 'critical',
+        timestamp: Date.now()
+      });
+      
+      return {
+        isValid: false,
+        errors,
+        warnings,
+        severity: 'critical',
+        recommendedActions: ['Check engine configuration']
+      };
+    }
+    
+    // Validate sample properties
+    const coherenceValues: number[] = [];
+    
+    for (let i = 0; i < samples.length; i++) {
+      const sample = samples[i];
+      
+      if (!sample.coordinates || !sample.weights || sample.coherence === undefined) {
+        errors.push({
+          code: 'INVALID_SAMPLE_STRUCTURE',
+          message: `Sample ${i} missing required properties`,
+          component: 'HyperSampleValidation',
+          severity: 'high',
+          timestamp: Date.now()
+        });
+        continue;
+      }
+      
+      if (sample.coherence < 0 || sample.coherence > 1) {
+        errors.push({
+          code: 'INVALID_COHERENCE_RANGE',
+          message: `Sample ${i} coherence outside [0,1] range`,
+          component: 'HyperSampleValidation',
+          severity: 'medium',
+          timestamp: Date.now()
+        });
+      }
+      
+      coherenceValues.push(sample.coherence);
+    }
+    
+    // Statistical validation
+    if (coherenceValues.length > 1) {
+      const avgCoherence = coherenceValues.reduce((sum, c) => sum + c, 0) / coherenceValues.length;
+      
+      if (avgCoherence < 0.3) {
+        warnings.push({
+          code: 'LOW_AVERAGE_COHERENCE',
+          message: `Average coherence ${avgCoherence.toFixed(3)} is low`,
+          component: 'HyperSampleValidation',
+          timestamp: Date.now()
+        });
+      }
+    }
+    
+    const severity = errors.some(e => e.severity === 'critical') ? 'critical' :
+                    errors.some(e => e.severity === 'high') ? 'high' :
+                    errors.length > 0 ? 'medium' : 'low';
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      severity,
+      recommendedActions: this.generateRecommendedActions(errors, warnings)
+    };
+  }
+
+  async performHealthCheck(): Promise<SystemHealthMetrics> {
+    try {
+      const hyperStats = this.hyperEngine.getHyperStats();
+      const temporalStats = this.temporalPredictor.getStats();
+      
+      const hyperHealth = Math.min(1, hyperStats.quantumCoherence + 0.3);
+      const temporalHealth = Math.min(1, temporalStats.estimatedAccuracy + 0.2);
+      
+      this.systemHealth = {
+        hyperDimensionalHealth: hyperHealth,
+        temporalPredictionHealth: temporalHealth,
+        quantumCoherenceHealth: hyperStats.quantumCoherence,
+        memoryHealth: 0.85,
+        performanceHealth: 0.9,
+        overallHealth: (hyperHealth + temporalHealth + 0.85 + 0.9) / 4,
+        criticalErrors: this.errorHistory.filter(e => e.severity === 'critical').length,
+        warnings: this.warningHistory.length,
+        lastHealthCheck: Date.now()
+      };
+      
+      return this.systemHealth;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return this.systemHealth;
+    }
+  }
+
+  private initializeSystemHealth(): void {
+    this.systemHealth = {
+      hyperDimensionalHealth: 1.0,
+      temporalPredictionHealth: 1.0,
+      quantumCoherenceHealth: 1.0,
+      memoryHealth: 1.0,
+      performanceHealth: 1.0,
+      overallHealth: 1.0,
+      criticalErrors: 0,
+      warnings: 0,
+      lastHealthCheck: Date.now()
+    };
+  }
+
+  private recordError(error: ValidationError): void {
+    this.errorHistory.push(error);
+    if (this.errorHistory.length > 1000) {
+      this.errorHistory = this.errorHistory.slice(-500);
+    }
+    console.error(`❌ Error: [${error.code}] ${error.message}`);
+  }
+
+  private recordWarning(warning: ValidationWarning): void {
+    this.warningHistory.push(warning);
+    if (this.warningHistory.length > 1000) {
+      this.warningHistory = this.warningHistory.slice(-500);
+    }
+    console.warn(`⚠️ Warning: [${warning.code}] ${warning.message}`);
+  }
+
+  private generateRecommendedActions(errors: ValidationError[], warnings: ValidationWarning[]): string[] {
+    const actions: string[] = [];
+    
+    if (errors.some(e => e.code === 'INVALID_BASE_POSITION')) {
+      actions.push('Verify input position coordinates');
+    }
+    
+    if (warnings.some(w => w.code === 'LOW_AVERAGE_COHERENCE')) {
+      actions.push('Check quantum coherence settings');
+    }
+    
+    if (actions.length === 0) {
+      actions.push('Monitor system performance');
+    }
+    
+    return actions;
+  }
+
+  getSystemHealth(): SystemHealthMetrics {
+    return { ...this.systemHealth };
+  }
+
+  getErrorHistory(): ValidationError[] {
+    return [...this.errorHistory];
+  }
+
+  getWarningHistory(): ValidationWarning[] {
+    return [...this.warningHistory];
+  }
+
+  clearHistory(): void {
+    this.errorHistory = [];
+    this.warningHistory = [];
+  }
+
+  updateGuards(newGuards: Partial<SystemGuards>): void {
+    this.guards = { ...this.guards, ...newGuards };
+  }
+
+  dispose(): void {
+    this.clearHistory();
+    console.log('♻️ Clean Robust System disposed');
+  }
+}
+
+export default CleanRobustSystem;

@@ -42,6 +42,10 @@ export { QuantumTaskPlanner, QuantumNerfScheduler, QuantumUtils, QuantumPerforma
 // Research Components exports
 export * from './research';
 
+// Enhanced Error Handling and Monitoring
+export { EnhancedErrorHandler, ErrorSeverity, ErrorCategory } from './core/EnhancedErrorHandler';
+export { SystemHealth, systemHealth } from './monitoring/SystemHealth';
+
 // Type exports
 export type {
   NerfConfig,

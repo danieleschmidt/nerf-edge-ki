@@ -725,7 +725,7 @@ export class GlobalizationAndComplianceEngine {
   }> {
     try {
       // Get or create user consent record
-      let userConsent = this.userConsents.get(userId) || 
+      const userConsent = this.userConsents.get(userId) || 
                        await this.createUserConsentRecord(userId, consentAction.context, consentAction.region);
       
       const actions: Array<{type: string, description: string, completed: boolean}> = [];
@@ -914,7 +914,7 @@ export class GlobalizationAndComplianceEngine {
       }> = [];
       
       let status: 'received' | 'processing' | 'completed' | 'rejected' | 'partial' = 'processing';
-      let deliverables: any = {};
+      const deliverables: any = {};
       const complianceNotes: string[] = [];
       
       // Calculate estimated completion time based on request type and region

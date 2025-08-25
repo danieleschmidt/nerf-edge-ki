@@ -255,6 +255,21 @@ export class NerfModel {
   }
 
   /**
+   * Legacy compatibility method
+   */
+  isLoaded(): boolean {
+    return this.isModelLoaded();
+  }
+
+  /**
+   * Get bounds in legacy format for compatibility
+   */
+  getBounds(): { min: number[]; max: number[] } {
+    const [min, max] = this.getBoundingBox();
+    return { min: [...min], max: [...max] };
+  }
+
+  /**
    * Get neural network data for GPU upload
    */
   getNetworkData(): ArrayBuffer | null {

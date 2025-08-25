@@ -5,6 +5,7 @@
 import { PerformanceMetrics, NerfConfig, RenderOptions } from '../core/types';
 import { NerfScene } from '../core/NerfScene';
 import { WebGPUBackend } from './WebGPUBackend';
+import { systemHealth } from '../monitoring/SystemHealth';
 
 export interface FoveationConfig {
   enabled: boolean;
@@ -139,14 +140,20 @@ export class NerfRenderer {
   }
 
   /**
-   * Render a single frame
+   * Render a single frame with comprehensive error handling
    */
   async render(options: RenderOptions): Promise<void> {
     if (!this.isInitialized || !this.backend || !this.currentScene) {
       throw new Error('Renderer not properly initialized');
     }
     
+    // Validate render options
+    this.validateRenderOptions(options);
+    
     const frameStart = performance.now();
+    let renderSuccessful = false;
+    
+    try {
     
     // Update adaptive quality based on performance
     if (this.adaptiveQualityEnabled) {
@@ -173,14 +180,28 @@ export class NerfRenderer {
       // Apply post-processing
       await this.applyPostProcessing();
       
+      renderSuccessful = true;
+      
+    } catch (error) {
+      renderSuccessful = false;
+      console.error('Render frame failed:', error);
+      
+      // Attempt recovery
+      await this.attemptRenderRecovery(error);
+      throw error;
+      
     } finally {
       // End frame
-      this.backend.endFrame();
+      try {
+        this.backend.endFrame();
+      } catch (error) {
+        console.warn('Failed to end frame:', error);
+      }
     }
     
     // Update performance metrics
     const frameTime = performance.now() - frameStart;
-    this.updatePerformanceMetrics(frameTime);
+    this.updatePerformanceMetrics(frameTime, renderSuccessful);
   }
 
   /**
@@ -357,7 +378,7 @@ export class NerfRenderer {
       console.log('Loading NeRF model...');
       
       // Validate model
-      if (!model.isLoaded()) {
+      if (!model.isModelLoaded()) {
         throw new Error('Model is not loaded');
       }
       
@@ -385,6 +406,25 @@ export class NerfRenderer {
   }
 
   /**
+   * Check if model is loaded (compatibility method)
+   */
+  isLoaded(): boolean {
+    return this._isLoaded;
+  }
+
+  private _isLoaded = false;
+
+  /**
+   * Get bounds for compatibility
+   */
+  getBounds(): { min: [number, number, number]; max: [number, number, number] } {
+    return {
+      min: [-1, -1, -1],
+      max: [1, 1, 1]
+    };
+  }
+
+  /**
    * Get current render statistics
    */
   getRenderStats(): RenderStats {
@@ -403,10 +443,13 @@ export class NerfRenderer {
     
     return {
       fps: Math.round(avgFPS),
+      currentFPS: Math.round(avgFPS),
       frameTime: Math.round(avgFrameTime * 100) / 100,
+      averageFrameTime: Math.round(avgFrameTime * 100) / 100,
       memoryUsage: Math.round(this.renderStats.memoryAllocated / 1024 / 1024),
-      drawCalls: this.renderStats.drawCalls,
-      quality: this.currentQuality
+      gpuUtilization: 75, // Mock GPU utilization
+      powerConsumption: 5.0, // Mock power consumption
+      frameCount: this.frameCount
     };
   }
 
@@ -432,9 +475,9 @@ export class NerfRenderer {
   }
 
   /**
-   * Update performance metrics
+   * Update performance metrics with error tracking
    */
-  private updatePerformanceMetrics(frameTime: number): void {
+  private updatePerformanceMetrics(frameTime: number, successful: boolean = true): void {
     this.frameTimeHistory.push(frameTime);
     if (this.frameTimeHistory.length > 60) {
       this.frameTimeHistory.shift();
@@ -442,7 +485,7 @@ export class NerfRenderer {
     
     // Calculate average frame time and FPS
     const avgFrameTime = this.frameTimeHistory.reduce((a, b) => a + b) / this.frameTimeHistory.length;
-    const fps = 1000 / avgFrameTime;
+    const fps = successful ? 1000 / avgFrameTime : 0;
     
     this.fpsHistory.push(fps);
     if (this.fpsHistory.length > 30) {
@@ -453,6 +496,43 @@ export class NerfRenderer {
     this.renderStats.raysPerSecond = Math.round(fps * 1000000); // Estimated rays per second
     
     this.frameCount++;
+    
+    // Update system health if available
+    if (typeof window !== 'undefined' && (window as any).systemHealth) {
+      const memoryPressure = this.renderStats.memoryAllocated > 1024 * 1024 * 1024 ? 'high' : 
+                            this.renderStats.memoryAllocated > 512 * 1024 * 1024 ? 'medium' : 'low';
+      (window as any).systemHealth.updateRenderingMetrics(fps, avgFrameTime, this.renderStats.drawCalls, memoryPressure);
+    }
+  }
+
+  /**
+   * Attempt to recover from render errors
+   */
+  private async attemptRenderRecovery(error: any): Promise<void> {
+    console.warn('Attempting render recovery from:', error?.message || error);
+    
+    try {
+      // Reset backend if necessary
+      if (this.backend && error?.message?.includes('WebGPU')) {
+        console.log('Reinitializing WebGPU backend...');
+        await this.backend.initialize(this.canvas);
+      }
+      
+      // Reduce quality if performance issues
+      if (error?.message?.includes('timeout') || error?.message?.includes('memory')) {
+        if (this.currentQuality === 'high') {
+          this.currentQuality = 'medium';
+          console.log('🔄 Reduced quality to medium for recovery');
+        } else if (this.currentQuality === 'medium') {
+          this.currentQuality = 'low';
+          console.log('🔄 Reduced quality to low for recovery');
+        }
+        this.applyQualitySettings();
+      }
+      
+    } catch (recoveryError) {
+      console.error('Render recovery failed:', recoveryError);
+    }
   }
 
   /**

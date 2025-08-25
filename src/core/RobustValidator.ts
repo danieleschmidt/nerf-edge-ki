@@ -38,7 +38,7 @@ export class RobustValidator {
   validateNerfConfig(config: any): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    let sanitizedValue = { ...config };
+    const sanitizedValue = { ...config };
 
     try {
       // Validate targetFPS
@@ -93,7 +93,7 @@ export class RobustValidator {
   validateRenderOptions(options: any): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    let sanitizedValue = { ...options };
+    const sanitizedValue = { ...options };
 
     try {
       // Validate cameraPosition

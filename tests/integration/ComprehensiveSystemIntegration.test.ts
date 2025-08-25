@@ -361,7 +361,7 @@ describe('Comprehensive System Integration', () => {
           staticScene: false,
           temporalCoherence: true,
           priorityRegions: [
-            { center: [0.5, 0.5], radius: 0.2, priority: 1.0 }
+            { center: [0.5, 0.5] as [number, number], radius: 0.2, priority: 1.0 }
           ]
         }
       };
@@ -524,8 +524,9 @@ describe('Comprehensive System Integration', () => {
       const predictiveModel = await spatialAwareness.generatePredictiveModel(5000); // 5 second horizon
       
       expect(predictiveModel).toBeDefined();
-      expect(predictiveModel.predictions).toBeDefined();
-      expect(predictiveModel.recommendations).toBeDefined();
+      // Remove non-existent property checks
+      expect(predictiveModel.id).toBeDefined();
+      expect(predictiveModel.accuracy).toBeGreaterThan(0.5);
 
       // 4. Monitor collaborative performance
       const collaborativeHealthMetrics = await healthMonitor.collectHealthMetrics({
@@ -747,8 +748,8 @@ describe('Comprehensive System Integration', () => {
             staticScene: scenario.config.staticScene,
             temporalCoherence: scenario.config.temporalCoherence,
             priorityRegions: scenario.config.foveatedRendering ? [
-              { center: [0.5, 0.5], radius: 0.15, priority: 1.0 },
-              { center: [0.3, 0.7], radius: 0.1, priority: 0.8 }
+              { center: [0.5, 0.5] as [number, number], radius: 0.15, priority: 1.0 },
+              { center: [0.3, 0.7] as [number, number], radius: 0.1, priority: 0.8 }
             ] : []
           }
         };
