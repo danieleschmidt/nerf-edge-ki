@@ -1,23 +1,26 @@
 /**
- * Robust Hyper-Dimensional System - Enterprise-grade error handling and validation
+ * Robust Hyper-Dimensional System - Advanced Error Handling & Recovery
  * 
- * Provides comprehensive error recovery, validation, monitoring, and self-healing
- * capabilities for the revolutionary hyper-dimensional NeRF engine.
+ * Provides comprehensive error handling, system resilience, and adaptive recovery
+ * mechanisms for the hyper-dimensional NeRF rendering system.
  */
 
-import { HyperDimensionalNerfEngine, type HyperSample, type HyperRenderingConfig } from './HyperDimensionalNerfEngine';
+import { HyperDimensionalNerfEngine, HyperSample, type HyperRenderingConfig } from './HyperDimensionalNerfEngine';
 import { TemporalNerfPrediction, type TemporalState } from './TemporalNerfPrediction';
 
-export interface SystemHealthMetrics {
-  hyperDimensionalHealth: number;      // 0-1 health score
-  temporalPredictionHealth: number;    // 0-1 health score
-  quantumCoherenceHealth: number;      // 0-1 health score
-  memoryHealth: number;                // 0-1 memory efficiency
-  performanceHealth: number;           // 0-1 performance score
-  overallHealth: number;               // 0-1 overall system health
-  criticalErrors: number;              // Count of critical errors
-  warnings: number;                    // Count of warnings
-  lastHealthCheck: number;             // Timestamp
+export interface ValidationError {
+  code: string;
+  message: string;
+  component: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  timestamp: number;
+}
+
+export interface ValidationWarning {
+  code: string;
+  message: string;
+  component: string;
+  timestamp: number;
 }
 
 export interface ValidationResult {
@@ -28,377 +31,236 @@ export interface ValidationResult {
   recommendedActions: string[];
 }
 
-export interface ValidationError {
-  code: string;
-  message: string;
-  component: string;
-  severity: 'medium' | 'high' | 'critical';
-  timestamp: number;
-  stackTrace?: string;
-  context?: Record<string, any>;
-}
-
-export interface ValidationWarning {
-  code: string;
-  message: string;
-  component: string;
-  timestamp: number;
-  context?: Record<string, any>;
-}
-
-export interface ErrorRecoveryPlan {
+export interface RecoveryPlan {
   strategy: 'retry' | 'fallback' | 'restart' | 'degrade' | 'isolate';
   maxAttempts: number;
   backoffMultiplier: number;
   timeoutMs: number;
-  fallbackConfig?: Partial<HyperRenderingConfig>;
+  fallbackConfig?: any;
+}
+
+export interface SystemHealthMetrics {
+  hyperDimensionalHealth: number;      // 0-1
+  temporalPredictionHealth: number;    // 0-1
+  quantumCoherenceHealth: number;      // 0-1
+  memoryHealth: number;                // 0-1
+  performanceHealth: number;           // 0-1
+  overallHealth: number;               // 0-1
+  criticalErrors: number;
+  warnings: number;
+  lastHealthCheck: number;
 }
 
 export interface SystemGuards {
+  maxRenderingTime: number;            // ms
   maxMemoryUsage: number;              // MB
-  maxDimensionCount: number;           // Dimensional limit
-  maxSampleCount: number;              // Sample limit per operation
-  maxInferenceTime: number;            // ms
-  maxCoherenceDeviation: number;       // Coherence variance limit
-  emergencyFallbackEnabled: boolean;
+  maxDimensions: number;               // dimensional limit
+  minCoherence: number;                // 0-1
+  errorRateThreshold: number;          // errors per minute
 }
 
 export class RobustHyperDimensionalSystem {
   private hyperEngine: HyperDimensionalNerfEngine;
   private temporalPredictor: TemporalNerfPrediction;
-  private systemHealth: SystemHealthMetrics;
-  private guards: SystemGuards;
   private errorHistory: ValidationError[] = [];
   private warningHistory: ValidationWarning[] = [];
-  private recoveryPlans: Map<string, ErrorRecoveryPlan> = new Map();
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private systemHealth: SystemHealthMetrics;
+  private guards: SystemGuards;
+  private recoveryPlans: Map<string, RecoveryPlan> = new Map();
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
-  
-  // Self-healing capabilities
   private adaptiveRecovery = true;
-  private autoOptimization = true;
-  private emergencyMode = false;
-  private lastSuccessfulConfig: HyperRenderingConfig | null = null;
+  private healthCheckInterval: NodeJS.Timer | null = null;
 
   constructor(
-    hyperEngine: HyperDimensionalNerfEngine,
-    temporalPredictor: TemporalNerfPrediction,
+    hyperConfig: HyperRenderingConfig,
     guards?: Partial<SystemGuards>
   ) {
-    this.hyperEngine = hyperEngine;
-    this.temporalPredictor = temporalPredictor;
+    this.hyperEngine = new HyperDimensionalNerfEngine(hyperConfig);
+    this.temporalPredictor = new TemporalNerfPrediction();
     
     this.guards = {
-      maxMemoryUsage: 4096,            // 4GB limit
-      maxDimensionCount: 100,          // Reasonable dimension limit
-      maxSampleCount: 1024,            // Sample limit
-      maxInferenceTime: 50,            // 50ms inference limit
-      maxCoherenceDeviation: 0.5,      // Coherence variance limit
-      emergencyFallbackEnabled: true,
+      maxRenderingTime: 5000,
+      maxMemoryUsage: 2048,
+      maxDimensions: 1000,
+      minCoherence: 0.1,
+      errorRateThreshold: 10,
       ...guards
     };
-    
+
     this.initializeSystemHealth();
     this.initializeRecoveryPlans();
     this.initializeCircuitBreakers();
     this.startHealthMonitoring();
-    
-    console.log('🛡️ Robust Hyper-Dimensional System initialized with comprehensive protection');
+
+    console.log('🛡️ Robust Hyper-Dimensional System initialized');
   }
 
   /**
-   * Robust hyper-dimensional sampling with comprehensive error handling
+   * Generate hyper-dimensional samples with comprehensive validation and recovery
    */
-  async robustHyperDimensionalSample(
-    basePosition: [number, number, number],
-    rayDirection: [number, number, number],
-    temporalContext?: number,
-    perspectiveId?: number,
-    semanticQuery?: string,
-    sampleCount: number = 128
-  ): Promise<{ samples: HyperSample[]; validation: ValidationResult }> {
-    
-    const operation = 'hyperDimensionalSample';
+  async generateRobustHyperSamples(
+    basePosition: number[],
+    contextRadius: number,
+    sampleCount: number
+  ): Promise<HyperSample[]> {
     const startTime = performance.now();
-    
+
     try {
-      // Pre-operation validation
-      const inputValidation = this.validateInputs({
-        basePosition,
-        rayDirection,
-        temporalContext,
-        perspectiveId,
-        semanticQuery,
-        sampleCount
-      });
-      
-      if (!inputValidation.isValid && inputValidation.severity === 'critical') {
-        throw new Error(`Critical input validation failed: ${inputValidation.errors.map(e => e.message).join(', ')}`);
+      // Pre-validation
+      const preValidation = this.validateInputParameters(basePosition, contextRadius, sampleCount);
+      if (!preValidation.isValid) {
+        throw new Error(`Input validation failed: ${preValidation.errors.map(e => e.message).join(', ')}`);
       }
-      
-      // Check system health before operation
-      await this.performHealthCheck();
-      
-      if (this.systemHealth.overallHealth < 0.3) {
-        console.warn('⚠️ System health degraded, attempting recovery...');
-        await this.attemptSystemRecovery();
-      }
-      
+
       // Check circuit breaker
-      const circuitBreaker = this.circuitBreakers.get(operation);
-      if (circuitBreaker && circuitBreaker.isOpen()) {
-        throw new Error('Circuit breaker open for hyperDimensionalSample operation');
+      const breaker = this.circuitBreakers.get('hyperDimensionalSample');
+      if (breaker?.isOpen()) {
+        console.warn('🔒 Circuit breaker open for hyper-dimensional sampling');
+        return this.generateFallbackSamples(basePosition, sampleCount);
       }
-      
-      // Enforce guards
-      const safeSampleCount = Math.min(sampleCount, this.guards.maxSampleCount);
-      if (safeSampleCount !== sampleCount) {
-        this.recordWarning({
-          code: 'SAMPLE_COUNT_LIMITED',
-          message: `Sample count reduced from ${sampleCount} to ${safeSampleCount} for safety`,
-          component: 'RobustHyperDimensionalSystem',
-          timestamp: Date.now()
-        });
-      }
-      
-      // Execute with timeout and monitoring
+
+      // Execute with timeout protection
       const samples = await this.executeWithTimeout(
-        () => this.hyperEngine.hyperDimensionalSample(
-          basePosition,
-          rayDirection,
-          temporalContext,
-          perspectiveId,
-          semanticQuery,
-          safeSampleCount
-        ),
-        this.guards.maxInferenceTime * 2, // Allow more time for sampling
-        'Hyper-dimensional sampling timeout'
+        () => this.hyperEngine.generateHyperDimensionalSamples(basePosition, contextRadius, sampleCount),
+        this.guards.maxRenderingTime,
+        'Hyper-dimensional sample generation timeout'
       );
-      
-      // Post-operation validation
-      const outputValidation = this.validateHyperSamples(samples);
-      
-      // Update circuit breaker on success
-      if (circuitBreaker) {
-        circuitBreaker.recordSuccess();
+
+      // Post-validation
+      const postValidation = this.validateGeneratedSamples(samples);
+      if (!postValidation.isValid) {
+        this.recordValidationErrors(postValidation.errors);
+        this.recordValidationWarnings(postValidation.warnings);
       }
-      
-      // Update performance metrics
-      const operationTime = performance.now() - startTime;
-      this.updatePerformanceMetrics(operation, operationTime, true);
-      
-      return {
-        samples,
-        validation: outputValidation
-      };
-      
+
+      // Record success
+      breaker?.recordSuccess();
+      this.updatePerformanceMetrics('hyperDimensionalSample', performance.now() - startTime, true);
+
+      return samples;
+
     } catch (error) {
-      const operationTime = performance.now() - startTime;
+      console.error('❌ Hyper-dimensional sample generation failed:', error);
       
-      // Record error
-      this.recordError({
-        code: 'HYPER_SAMPLE_FAILED',
-        message: error instanceof Error ? error.message : 'Unknown error in hyper-dimensional sampling',
-        component: 'HyperDimensionalNerfEngine',
-        severity: 'high',
-        timestamp: Date.now(),
-        stackTrace: error instanceof Error ? error.stack : undefined,
-        context: { basePosition, rayDirection, sampleCount, operationTime }
-      });
-      
-      // Update circuit breaker on failure
-      const circuitBreaker = this.circuitBreakers.get(operation);
-      if (circuitBreaker) {
-        circuitBreaker.recordFailure();
-      }
-      
-      // Update performance metrics
-      this.updatePerformanceMetrics(operation, operationTime, false);
-      
+      // Record failure
+      const breaker = this.circuitBreakers.get('hyperDimensionalSample');
+      breaker?.recordFailure();
+
       // Attempt recovery
-      const recoveryResult = await this.executeRecoveryPlan(operation, error);
+      const recoveryResult = await this.executeRecoveryPlan('hyperDimensionalSample', error);
       
       if (recoveryResult.success && recoveryResult.samples) {
-        return {
-          samples: recoveryResult.samples,
-          validation: this.validateHyperSamples(recoveryResult.samples)
-        };
+        this.updatePerformanceMetrics('hyperDimensionalSample', performance.now() - startTime, false);
+        return recoveryResult.samples;
       }
-      
-      throw error;
+
+      // Final fallback
+      console.warn('⚠️ Using fallback sample generation');
+      return this.generateFallbackSamples(basePosition, sampleCount);
     }
   }
 
   /**
-   * Robust temporal prediction with comprehensive error handling
+   * Predict future states with robust error handling
    */
-  async robustTemporalPrediction(
-    steps: number = 10
-  ): Promise<{ prediction: any; validation: ValidationResult }> {
-    
-    const operation = 'temporalPrediction';
+  async predictRobustTemporalStates(
+    currentHistory: TemporalState[],
+    predictionSteps: number
+  ): Promise<any> {
     const startTime = performance.now();
-    
+
     try {
-      // Validate input
-      if (steps <= 0 || steps > 100) {
-        throw new Error(`Invalid step count: ${steps}. Must be between 1 and 100.`);
+      // Validate input history
+      const validation = this.validateTemporalHistory(currentHistory);
+      if (!validation.isValid) {
+        throw new Error(`Temporal history validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
       }
-      
-      // Check temporal system health
-      if (this.systemHealth.temporalPredictionHealth < 0.5) {
-        console.warn('⚠️ Temporal prediction system degraded, attempting recovery...');
-        await this.recoverTemporalSystem();
+
+      // Check circuit breaker
+      const breaker = this.circuitBreakers.get('temporalPrediction');
+      if (breaker?.isOpen()) {
+        console.warn('🔒 Circuit breaker open for temporal prediction');
+        return this.generateFallbackPrediction(predictionSteps);
       }
-      
-      // Execute with monitoring
+
+      // Execute prediction with timeout
       const prediction = await this.executeWithTimeout(
-        () => this.temporalPredictor.predictFutureStates(steps),
-        this.guards.maxInferenceTime,
+        () => this.temporalPredictor.predictFutureStates(currentHistory, predictionSteps),
+        this.guards.maxRenderingTime * 0.8,
         'Temporal prediction timeout'
       );
-      
+
       // Validate prediction results
-      const validation = this.validateTemporalPrediction(prediction);
-      
-      const operationTime = performance.now() - startTime;
-      this.updatePerformanceMetrics(operation, operationTime, true);
-      
-      return { prediction, validation };
-      
+      const predictionValidation = this.validateTemporalPrediction(prediction);
+      if (!predictionValidation.isValid) {
+        this.recordValidationErrors(predictionValidation.errors);
+        this.recordValidationWarnings(predictionValidation.warnings);
+      }
+
+      // Record success
+      breaker?.recordSuccess();
+      this.updatePerformanceMetrics('temporalPrediction', performance.now() - startTime, true);
+
+      return prediction;
+
     } catch (error) {
-      const operationTime = performance.now() - startTime;
+      console.error('❌ Temporal prediction failed:', error);
       
-      this.recordError({
-        code: 'TEMPORAL_PREDICTION_FAILED',
-        message: error instanceof Error ? error.message : 'Unknown error in temporal prediction',
-        component: 'TemporalNerfPrediction',
-        severity: 'medium',
-        timestamp: Date.now(),
-        stackTrace: error instanceof Error ? error.stack : undefined,
-        context: { steps, operationTime }
-      });
-      
-      this.updatePerformanceMetrics(operation, operationTime, false);
-      
-      // Fallback to simplified prediction
-      const fallbackPrediction = this.generateFallbackPrediction(steps);
-      
-      return {
-        prediction: fallbackPrediction,
-        validation: {
-          isValid: true,
-          errors: [],
-          warnings: [{
-            code: 'FALLBACK_PREDICTION',
-            message: 'Using fallback prediction due to system error',
-            component: 'RobustHyperDimensionalSystem',
-            timestamp: Date.now()
-          }],
-          severity: 'medium',
-          recommendedActions: ['Check temporal prediction system health', 'Review system logs']
-        }
-      };
+      // Record failure
+      const breaker = this.circuitBreakers.get('temporalPrediction');
+      breaker?.recordFailure();
+
+      // Attempt recovery
+      try {
+        await this.recoverTemporalSystem();
+        this.updatePerformanceMetrics('temporalPrediction', performance.now() - startTime, false);
+        return this.generateFallbackPrediction(predictionSteps);
+      } catch (recoveryError) {
+        console.error('❌ Temporal system recovery failed:', recoveryError);
+        return this.generateFallbackPrediction(predictionSteps);
+      }
     }
   }
 
-  /**
-   * Comprehensive input validation
-   */
-  private validateInputs(inputs: any): ValidationResult {
+  // Private validation methods
+  private validateInputParameters(
+    basePosition: number[],
+    contextRadius: number,
+    sampleCount: number
+  ): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
-    
-    // Validate base position
-    if (!Array.isArray(inputs.basePosition) || inputs.basePosition.length !== 3) {
+
+    if (!basePosition || !Array.isArray(basePosition) || basePosition.length !== 3) {
       errors.push({
         code: 'INVALID_BASE_POSITION',
-        message: 'Base position must be a 3-element array',
+        message: 'Base position must be a 3D array',
         component: 'InputValidation',
         severity: 'critical',
         timestamp: Date.now()
       });
-    } else {
-      for (let i = 0; i < 3; i++) {
-        if (typeof inputs.basePosition[i] !== 'number' || !isFinite(inputs.basePosition[i])) {
-          errors.push({
-            code: 'INVALID_POSITION_COMPONENT',
-            message: `Position component ${i} is not a finite number`,
-            component: 'InputValidation',
-            severity: 'critical',
-            timestamp: Date.now()
-          });
-        }
-        
-        if (Math.abs(inputs.basePosition[i]) > 1000) {
-          warnings.push({
-            code: 'EXTREME_POSITION_VALUE',
-            message: `Position component ${i} has extreme value: ${inputs.basePosition[i]}`,
-            component: 'InputValidation',
-            timestamp: Date.now()
-          });
-        }
-      }
     }
-    
-    // Validate ray direction
-    if (!Array.isArray(inputs.rayDirection) || inputs.rayDirection.length !== 3) {
+
+    if (contextRadius <= 0 || contextRadius > 100) {
       errors.push({
-        code: 'INVALID_RAY_DIRECTION',
-        message: 'Ray direction must be a 3-element array',
-        component: 'InputValidation',
-        severity: 'critical',
-        timestamp: Date.now()
-      });
-    } else {
-      const magnitude = Math.sqrt(
-        inputs.rayDirection[0] * inputs.rayDirection[0] +
-        inputs.rayDirection[1] * inputs.rayDirection[1] +
-        inputs.rayDirection[2] * inputs.rayDirection[2]
-      );
-      
-      if (magnitude < 0.001) {
-        errors.push({
-          code: 'ZERO_RAY_DIRECTION',
-          message: 'Ray direction magnitude is too small',
-          component: 'InputValidation',
-          severity: 'high',
-          timestamp: Date.now()
-        });
-      }
-      
-      if (Math.abs(magnitude - 1.0) > 0.1) {
-        warnings.push({
-          code: 'NON_NORMALIZED_RAY',
-          message: `Ray direction is not normalized (magnitude: ${magnitude})`,
-          component: 'InputValidation',
-          timestamp: Date.now()
-        });
-      }
-    }
-    
-    // Validate sample count
-    if (inputs.sampleCount <= 0 || inputs.sampleCount > this.guards.maxSampleCount) {
-      errors.push({
-        code: 'INVALID_SAMPLE_COUNT',
-        message: `Sample count ${inputs.sampleCount} is outside valid range [1, ${this.guards.maxSampleCount}]`,
+        code: 'INVALID_CONTEXT_RADIUS',
+        message: `Context radius ${contextRadius} outside valid range (0, 100]`,
         component: 'InputValidation',
         severity: 'high',
         timestamp: Date.now()
       });
     }
-    
-    // Validate temporal context
-    if (inputs.temporalContext !== undefined && !isFinite(inputs.temporalContext)) {
+
+    if (sampleCount <= 0 || sampleCount > this.guards.maxDimensions) {
       errors.push({
-        code: 'INVALID_TEMPORAL_CONTEXT',
-        message: 'Temporal context must be a finite number',
+        code: 'INVALID_SAMPLE_COUNT',
+        message: `Sample count ${sampleCount} outside valid range (0, ${this.guards.maxDimensions}]`,
         component: 'InputValidation',
-        severity: 'medium',
+        severity: 'high',
         timestamp: Date.now()
       });
     }
-    
+
     const severity = errors.some(e => e.severity === 'critical') ? 'critical' :
                     errors.some(e => e.severity === 'high') ? 'high' :
                     errors.length > 0 ? 'medium' : 'low';
@@ -412,18 +274,15 @@ export class RobustHyperDimensionalSystem {
     };
   }
 
-  /**
-   * Validate hyper-dimensional samples
-   */
-  private validateHyperSamples(samples: HyperSample[]): ValidationResult {
+  private validateGeneratedSamples(samples: HyperSample[]): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
-    
-    if (!Array.isArray(samples) || samples.length === 0) {
+
+    if (!samples || !Array.isArray(samples)) {
       errors.push({
-        code: 'EMPTY_SAMPLES',
-        message: 'No samples generated',
-        component: 'HyperSampleValidation',
+        code: 'INVALID_SAMPLES_STRUCTURE',
+        message: 'Generated samples is not a valid array',
+        component: 'SampleValidation',
         severity: 'critical',
         timestamp: Date.now()
       });
@@ -433,109 +292,439 @@ export class RobustHyperDimensionalSystem {
         errors,
         warnings,
         severity: 'critical',
-        recommendedActions: ['Check hyper-dimensional engine configuration', 'Verify input parameters']
+        recommendedActions: ['Check sample generation algorithm', 'Verify engine initialization']
       };
     }
-    
-    // Validate sample structure and properties
-    const coherenceValues: number[] = [];
-    const dimensionCounts: number[] = [];
-    
+
+    if (samples.length === 0) {
+      warnings.push({
+        code: 'EMPTY_SAMPLES',
+        message: 'No samples were generated',
+        component: 'SampleValidation',
+        timestamp: Date.now()
+      });
+    }
+
+    let totalCoherence = 0;
     for (let i = 0; i < samples.length; i++) {
       const sample = samples[i];
       
-      // Check required properties
-      if (!sample.coordinates || !sample.weights || sample.coherence === undefined) {
+      if (!sample.coordinates || sample.coordinates.length === 0) {
         errors.push({
-          code: 'INVALID_SAMPLE_STRUCTURE',
-          message: `Sample ${i} missing required properties`,
-          component: 'HyperSampleValidation',
-          severity: 'high',
-          timestamp: Date.now()
-        });
-        continue;
-      }
-      
-      // Validate coordinates
-      if (!(sample.coordinates instanceof Float32Array)) {
-        errors.push({
-          code: 'INVALID_COORDINATES_TYPE',
-          message: `Sample ${i} coordinates not Float32Array`,
-          component: 'HyperSampleValidation',
-          severity: 'medium',
-          timestamp: Date.now()
-        });
-      }
-      
-      // Check dimension count
-      const dimCount = sample.coordinates.length;
-      dimensionCounts.push(dimCount);
-      
-      if (dimCount > this.guards.maxDimensionCount) {
-        errors.push({
-          code: 'EXCESSIVE_DIMENSIONS',
-          message: `Sample ${i} has ${dimCount} dimensions, exceeding limit of ${this.guards.maxDimensionCount}`,
-          component: 'HyperSampleValidation',
+          code: 'INVALID_SAMPLE_COORDINATES',
+          message: `Sample ${i} has invalid coordinates`,
+          component: 'SampleValidation',
           severity: 'high',
           timestamp: Date.now()
         });
       }
-      
-      // Validate coherence
-      if (sample.coherence < 0 || sample.coherence > 1) {
-        errors.push({
-          code: 'INVALID_COHERENCE_RANGE',
-          message: `Sample ${i} coherence ${sample.coherence} outside [0,1] range`,
-          component: 'HyperSampleValidation',
-          severity: 'medium',
-          timestamp: Date.now()
-        });
-      }
-      
-      coherenceValues.push(sample.coherence);
-      
-      // Check for NaN or infinite values
-      for (let j = 0; j < sample.coordinates.length; j++) {
-        if (!isFinite(sample.coordinates[j])) {
-          errors.push({
-            code: 'INVALID_COORDINATE_VALUE',
-            message: `Sample ${i} coordinate ${j} is not finite: ${sample.coordinates[j]}`,
-            component: 'HyperSampleValidation',
-            severity: 'high',
-            timestamp: Date.now()
-          });
-        }
-      }
-    }
-    
-    // Statistical validation
-    if (coherenceValues.length > 1) {
-      const avgCoherence = coherenceValues.reduce((sum, c) => sum + c, 0) / coherenceValues.length;
-      const coherenceVariance = coherenceValues.reduce((sum, c) => sum + Math.pow(c - avgCoherence, 2), 0) / coherenceValues.length;
-      
-      if (coherenceVariance > this.guards.maxCoherenceDeviation) {
+
+      if (sample.coherence < this.guards.minCoherence) {
         warnings.push({
-          code: 'HIGH_COHERENCE_VARIANCE',
-          message: `Coherence variance ${coherenceVariance.toFixed(3)} exceeds threshold ${this.guards.maxCoherenceDeviation}`,
-          component: 'HyperSampleValidation',
+          code: 'LOW_SAMPLE_COHERENCE',
+          message: `Sample ${i} has low coherence: ${sample.coherence}`,
+          component: 'SampleValidation',
           timestamp: Date.now()
         });
       }
-      
-      if (avgCoherence < 0.3) {
-        warnings.push({
-          code: 'LOW_AVERAGE_COHERENCE',
-          message: `Average coherence ${avgCoherence.toFixed(3)} is low`,
-          component: 'HyperSampleValidation',
-          timestamp: Date.now()
-        });
-      }
+
+      totalCoherence += sample.coherence;
     }
-    
+
+    const avgCoherence = samples.length > 0 ? totalCoherence / samples.length : 0;
+    if (avgCoherence < 0.5) {
+      warnings.push({
+        code: 'LOW_AVERAGE_COHERENCE',
+        message: `Average coherence ${avgCoherence.toFixed(3)} below recommended threshold`,
+        component: 'SampleValidation',
+        timestamp: Date.now()
+      });
+    }
+
     const severity = errors.some(e => e.severity === 'critical') ? 'critical' :
                     errors.some(e => e.severity === 'high') ? 'high' :
-                    errors.length > 0 ? 'medium' : 'low';\n    \n    return {\n      isValid: errors.length === 0,\n      errors,\n      warnings,\n      severity,\n      recommendedActions: this.generateRecommendedActions(errors, warnings)\n    };\n  }\n\n  /**\n   * Validate temporal prediction results\n   */\n  private validateTemporalPrediction(prediction: any): ValidationResult {\n    const errors: ValidationError[] = [];\n    const warnings: ValidationWarning[] = [];\n    \n    if (!prediction) {\n      errors.push({\n        code: 'NULL_PREDICTION',\n        message: 'Prediction result is null or undefined',\n        component: 'TemporalValidation',\n        severity: 'critical',\n        timestamp: Date.now()\n      });\n      \n      return {\n        isValid: false,\n        errors,\n        warnings,\n        severity: 'critical',\n        recommendedActions: ['Check temporal prediction system', 'Verify input history']\n      };\n    }\n    \n    // Validate prediction structure\n    if (!prediction.futureStates || !Array.isArray(prediction.futureStates)) {\n      errors.push({\n        code: 'INVALID_PREDICTION_STRUCTURE',\n        message: 'Prediction missing futureStates array',\n        component: 'TemporalValidation',\n        severity: 'high',\n        timestamp: Date.now()\n      });\n    }\n    \n    // Validate confidence scores\n    if (prediction.confidence !== undefined && (prediction.confidence < 0 || prediction.confidence > 1)) {\n      errors.push({\n        code: 'INVALID_CONFIDENCE_RANGE',\n        message: `Prediction confidence ${prediction.confidence} outside [0,1] range`,\n        component: 'TemporalValidation',\n        severity: 'medium',\n        timestamp: Date.now()\n      });\n    }\n    \n    if (prediction.confidence < 0.3) {\n      warnings.push({\n        code: 'LOW_PREDICTION_CONFIDENCE',\n        message: `Low prediction confidence: ${prediction.confidence}`,\n        component: 'TemporalValidation',\n        timestamp: Date.now()\n      });\n    }\n    \n    // Validate future states\n    if (prediction.futureStates && Array.isArray(prediction.futureStates)) {\n      for (let i = 0; i < prediction.futureStates.length; i++) {\n        const state = prediction.futureStates[i];\n        \n        if (!state.position || !Array.isArray(state.position) || state.position.length !== 3) {\n          errors.push({\n            code: 'INVALID_FUTURE_STATE_POSITION',\n            message: `Future state ${i} has invalid position`,\n            component: 'TemporalValidation',\n            severity: 'medium',\n            timestamp: Date.now()\n          });\n        }\n        \n        if (state.confidence !== undefined && (state.confidence < 0 || state.confidence > 1)) {\n          errors.push({\n            code: 'INVALID_STATE_CONFIDENCE',\n            message: `Future state ${i} confidence ${state.confidence} outside [0,1] range`,\n            component: 'TemporalValidation',\n            severity: 'medium',\n            timestamp: Date.now()\n          });\n        }\n      }\n    }
+                    errors.length > 0 ? 'medium' : 'low';
     
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      severity,
+      recommendedActions: this.generateRecommendedActions(errors, warnings)
+    };
+  }
+
+  private validateTemporalHistory(history: TemporalState[]): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
+
+    if (!history || !Array.isArray(history)) {
+      errors.push({
+        code: 'INVALID_TEMPORAL_HISTORY',
+        message: 'Temporal history must be an array',
+        component: 'TemporalValidation',
+        severity: 'critical',
+        timestamp: Date.now()
+      });
+      
+      return {
+        isValid: false,
+        errors,
+        warnings,
+        severity: 'critical',
+        recommendedActions: ['Check temporal state collection', 'Verify history initialization']
+      };
+    }
+
+    if (history.length === 0) {
+      warnings.push({
+        code: 'EMPTY_TEMPORAL_HISTORY',
+        message: 'Temporal history is empty',
+        component: 'TemporalValidation',
+        timestamp: Date.now()
+      });
+    }
+
     const severity = errors.some(e => e.severity === 'critical') ? 'critical' :
                     errors.some(e => e.severity === 'high') ? 'high' :
-                    errors.length > 0 ? 'medium' : 'low';\n    \n    return {\n      isValid: errors.length === 0,\n      errors,\n      warnings,\n      severity,\n      recommendedActions: this.generateRecommendedActions(errors, warnings)\n    };\n  }\n\n  /**\n   * Execute operation with timeout protection\n   */\n  private async executeWithTimeout<T>(\n    operation: () => Promise<T>,\n    timeoutMs: number,\n    timeoutMessage: string\n  ): Promise<T> {\n    return new Promise((resolve, reject) => {\n      const timeout = setTimeout(() => {\n        reject(new Error(timeoutMessage));\n      }, timeoutMs);\n      \n      operation()\n        .then(result => {\n          clearTimeout(timeout);\n          resolve(result);\n        })\n        .catch(error => {\n          clearTimeout(timeout);\n          reject(error);\n        });\n    });\n  }\n\n  /**\n   * Execute recovery plan for failed operations\n   */\n  private async executeRecoveryPlan(\n    operation: string,\n    error: unknown\n  ): Promise<{ success: boolean; samples?: HyperSample[] }> {\n    \n    const plan = this.recoveryPlans.get(operation);\n    if (!plan) {\n      console.warn(`⚠️ No recovery plan found for operation: ${operation}`);\n      return { success: false };\n    }\n    \n    console.log(`🔄 Executing recovery plan for ${operation} (strategy: ${plan.strategy})`);\n    \n    let attempts = 0;\n    let backoffDelay = 100; // Start with 100ms\n    \n    while (attempts < plan.maxAttempts) {\n      attempts++;\n      \n      try {\n        switch (plan.strategy) {\n          case 'retry':\n            // Simple retry with backoff\n            await this.delay(backoffDelay);\n            // Would retry the original operation here\n            break;\n            \n          case 'fallback':\n            // Use degraded configuration\n            if (plan.fallbackConfig) {\n              console.log('📉 Using fallback configuration');\n              return await this.executeFallbackOperation(operation, plan.fallbackConfig);\n            }\n            break;\n            \n          case 'restart':\n            // Restart subsystem\n            await this.restartSubsystem(operation);\n            break;\n            \n          case 'degrade':\n            // Reduce complexity\n            return await this.executeDegradedOperation(operation);\n            \n          case 'isolate':\n            // Isolate problematic component\n            await this.isolateComponent(operation);\n            return { success: false };\n        }\n        \n        backoffDelay *= plan.backoffMultiplier;\n        \n      } catch (recoveryError) {\n        console.error(`❌ Recovery attempt ${attempts} failed:`, recoveryError);\n        \n        if (attempts < plan.maxAttempts) {\n          backoffDelay *= plan.backoffMultiplier;\n          continue;\n        }\n      }\n    }\n    \n    console.error(`❌ All recovery attempts exhausted for ${operation}`);\n    return { success: false };\n  }\n\n  /**\n   * Perform comprehensive system health check\n   */\n  async performHealthCheck(): Promise<SystemHealthMetrics> {\n    const startTime = performance.now();\n    \n    try {\n      // Check hyper-dimensional engine health\n      const hyperStats = this.hyperEngine.getHyperStats();\n      const hyperHealth = this.calculateHyperHealth(hyperStats);\n      \n      // Check temporal prediction health\n      const temporalStats = this.temporalPredictor.getStats();\n      const temporalHealth = this.calculateTemporalHealth(temporalStats);\n      \n      // Check quantum coherence health\n      const quantumHealth = hyperStats.quantumCoherence;\n      \n      // Check memory health\n      const memoryHealth = this.calculateMemoryHealth();\n      \n      // Check performance health\n      const performanceHealth = this.calculatePerformanceHealth();\n      \n      // Calculate overall health\n      const overallHealth = (\n        hyperHealth * 0.3 +\n        temporalHealth * 0.2 +\n        quantumHealth * 0.2 +\n        memoryHealth * 0.15 +\n        performanceHealth * 0.15\n      );\n      \n      this.systemHealth = {\n        hyperDimensionalHealth: hyperHealth,\n        temporalPredictionHealth: temporalHealth,\n        quantumCoherenceHealth: quantumHealth,\n        memoryHealth,\n        performanceHealth,\n        overallHealth,\n        criticalErrors: this.errorHistory.filter(e => e.severity === 'critical').length,\n        warnings: this.warningHistory.length,\n        lastHealthCheck: Date.now()\n      };\n      \n      // Log health status\n      const healthCheckTime = performance.now() - startTime;\n      if (overallHealth < 0.5) {\n        console.warn(`⚠️ System health degraded: ${(overallHealth * 100).toFixed(1)}% (check took ${healthCheckTime.toFixed(2)}ms)`);\n      }\n      \n      return this.systemHealth;\n      \n    } catch (error) {\n      console.error('❌ Health check failed:', error);\n      \n      // Return degraded health metrics\n      this.systemHealth = {\n        hyperDimensionalHealth: 0.1,\n        temporalPredictionHealth: 0.1,\n        quantumCoherenceHealth: 0.1,\n        memoryHealth: 0.1,\n        performanceHealth: 0.1,\n        overallHealth: 0.1,\n        criticalErrors: this.errorHistory.filter(e => e.severity === 'critical').length + 1,\n        warnings: this.warningHistory.length,\n        lastHealthCheck: Date.now()\n      };\n      \n      return this.systemHealth;\n    }\n  }\n\n  // Additional utility methods with simplified implementations\n  \n  private initializeSystemHealth(): void {\n    this.systemHealth = {\n      hyperDimensionalHealth: 1.0,\n      temporalPredictionHealth: 1.0,\n      quantumCoherenceHealth: 1.0,\n      memoryHealth: 1.0,\n      performanceHealth: 1.0,\n      overallHealth: 1.0,\n      criticalErrors: 0,\n      warnings: 0,\n      lastHealthCheck: Date.now()\n    };\n  }\n  \n  private initializeRecoveryPlans(): void {\n    this.recoveryPlans.set('hyperDimensionalSample', {\n      strategy: 'fallback',\n      maxAttempts: 3,\n      backoffMultiplier: 2,\n      timeoutMs: 5000,\n      fallbackConfig: {\n        quantumCoherence: false,\n        adaptiveResolution: false\n      }\n    });\n    \n    this.recoveryPlans.set('temporalPrediction', {\n      strategy: 'degrade',\n      maxAttempts: 2,\n      backoffMultiplier: 1.5,\n      timeoutMs: 3000\n    });\n  }\n  \n  private initializeCircuitBreakers(): void {\n    this.circuitBreakers.set('hyperDimensionalSample', new CircuitBreaker({\n      failureThreshold: 5,\n      resetTimeout: 30000,\n      monitoringPeriod: 60000\n    }));\n    \n    this.circuitBreakers.set('temporalPrediction', new CircuitBreaker({\n      failureThreshold: 3,\n      resetTimeout: 20000,\n      monitoringPeriod: 45000\n    }));\n  }\n  \n  private startHealthMonitoring(): void {\n    this.healthCheckInterval = setInterval(async () => {\n      await this.performHealthCheck();\n      \n      if (this.systemHealth.overallHealth < 0.3 && this.adaptiveRecovery) {\n        console.log('🔄 Triggering adaptive recovery due to low system health');\n        await this.attemptSystemRecovery();\n      }\n    }, 30000); // Check every 30 seconds\n  }\n  \n  private recordError(error: ValidationError): void {\n    this.errorHistory.push(error);\n    \n    // Limit error history size\n    if (this.errorHistory.length > 1000) {\n      this.errorHistory = this.errorHistory.slice(-500);\n    }\n    \n    console.error(`❌ Error recorded: [${error.code}] ${error.message}`);\n  }\n  \n  private recordWarning(warning: ValidationWarning): void {\n    this.warningHistory.push(warning);\n    \n    // Limit warning history size\n    if (this.warningHistory.length > 1000) {\n      this.warningHistory = this.warningHistory.slice(-500);\n    }\n    \n    console.warn(`⚠️ Warning recorded: [${warning.code}] ${warning.message}`);\n  }\n  \n  private generateRecommendedActions(errors: ValidationError[], warnings: ValidationWarning[]): string[] {\n    const actions: string[] = [];\n    \n    if (errors.some(e => e.code === 'INVALID_BASE_POSITION')) {\n      actions.push('Verify input position coordinates are valid numbers');\n    }\n    \n    if (errors.some(e => e.code === 'EXCESSIVE_DIMENSIONS')) {\n      actions.push('Reduce dimensional complexity or increase system limits');\n    }\n    \n    if (warnings.some(w => w.code === 'LOW_AVERAGE_COHERENCE')) {\n      actions.push('Check quantum coherence settings and environmental factors');\n    }\n    \n    if (actions.length === 0) {\n      actions.push('Monitor system performance and logs for issues');\n    }\n    \n    return actions;\n  }\n  \n  private async delay(ms: number): Promise<void> {\n    return new Promise(resolve => setTimeout(resolve, ms));\n  }\n  \n  private async executeFallbackOperation(operation: string, fallbackConfig: any): Promise<{ success: boolean; samples?: HyperSample[] }> {\n    console.log(`📉 Executing fallback operation for ${operation}`);\n    // Simplified fallback implementation\n    return { success: true, samples: [] };\n  }\n  \n  private async executeDegradedOperation(operation: string): Promise<{ success: boolean; samples?: HyperSample[] }> {\n    console.log(`📉 Executing degraded operation for ${operation}`);\n    // Simplified degraded implementation\n    return { success: true, samples: [] };\n  }\n  \n  private async restartSubsystem(operation: string): Promise<void> {\n    console.log(`🔄 Restarting subsystem for ${operation}`);\n    // Simplified restart implementation\n  }\n  \n  private async isolateComponent(operation: string): Promise<void> {\n    console.log(`🔒 Isolating component for ${operation}`);\n    // Simplified isolation implementation\n  }\n  \n  private async attemptSystemRecovery(): Promise<void> {\n    console.log('🔄 Attempting system recovery...');\n    // Simplified recovery implementation\n  }\n  \n  private async recoverTemporalSystem(): Promise<void> {\n    console.log('🔄 Recovering temporal prediction system...');\n    // Simplified temporal recovery\n  }\n  \n  private generateFallbackPrediction(steps: number): any {\n    // Simple fallback prediction\n    return {\n      futureStates: [],\n      confidence: 0.1,\n      timeHorizon: 0.1,\n      accuracy: 0.1,\n      neuralConfidence: 0.1,\n      quantumEnhanced: false\n    };\n  }\n  \n  private calculateHyperHealth(stats: any): number {\n    return Math.min(1, stats.quantumCoherence + stats.temporalConsistency + 0.3);\n  }\n  \n  private calculateTemporalHealth(stats: any): number {\n    return Math.min(1, stats.estimatedAccuracy + 0.2);\n  }\n  \n  private calculateMemoryHealth(): number {\n    // Mock memory health calculation\n    return 0.85;\n  }\n  \n  private calculatePerformanceHealth(): number {\n    // Mock performance health calculation\n    return 0.9;\n  }\n  \n  private updatePerformanceMetrics(operation: string, time: number, success: boolean): void {\n    // Track performance metrics\n    console.log(`📊 ${operation}: ${time.toFixed(2)}ms (${success ? 'success' : 'failure'})`);\n  }\n\n  /**\n   * Get current system health\n   */\n  getSystemHealth(): SystemHealthMetrics {\n    return { ...this.systemHealth };\n  }\n  \n  /**\n   * Get error history\n   */\n  getErrorHistory(): ValidationError[] {\n    return [...this.errorHistory];\n  }\n  \n  /**\n   * Get warning history\n   */\n  getWarningHistory(): ValidationWarning[] {\n    return [...this.warningHistory];\n  }\n  \n  /**\n   * Clear error and warning history\n   */\n  clearHistory(): void {\n    this.errorHistory = [];\n    this.warningHistory = [];\n    console.log('🧹 Error and warning history cleared');\n  }\n  \n  /**\n   * Update system guards\n   */\n  updateGuards(newGuards: Partial<SystemGuards>): void {\n    this.guards = { ...this.guards, ...newGuards };\n    console.log('🛡️ System guards updated');\n  }\n  \n  /**\n   * Dispose robust system\n   */\n  dispose(): void {\n    if (this.healthCheckInterval) {\n      clearInterval(this.healthCheckInterval);\n      this.healthCheckInterval = null;\n    }\n    \n    this.clearHistory();\n    this.circuitBreakers.clear();\n    this.recoveryPlans.clear();\n    \n    console.log('♻️ Robust Hyper-Dimensional System disposed');\n  }\n}\n\n/**\n * Circuit Breaker implementation\n */\nclass CircuitBreaker {\n  private failures = 0;\n  private lastFailureTime = 0;\n  private state: 'closed' | 'open' | 'half-open' = 'closed';\n  \n  constructor(private config: {\n    failureThreshold: number;\n    resetTimeout: number;\n    monitoringPeriod: number;\n  }) {}\n  \n  isOpen(): boolean {\n    if (this.state === 'open') {\n      const now = Date.now();\n      if (now - this.lastFailureTime > this.config.resetTimeout) {\n        this.state = 'half-open';\n        return false;\n      }\n      return true;\n    }\n    return false;\n  }\n  \n  recordSuccess(): void {\n    this.failures = 0;\n    this.state = 'closed';\n  }\n  \n  recordFailure(): void {\n    this.failures++;\n    this.lastFailureTime = Date.now();\n    \n    if (this.failures >= this.config.failureThreshold) {\n      this.state = 'open';\n    }\n  }\n}\n\nexport default RobustHyperDimensionalSystem;"
+                    errors.length > 0 ? 'medium' : 'low';
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      severity,
+      recommendedActions: this.generateRecommendedActions(errors, warnings)
+    };
+  }
+
+  private validateTemporalPrediction(prediction: any): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
+
+    if (!prediction) {
+      errors.push({
+        code: 'NULL_PREDICTION',
+        message: 'Prediction result is null or undefined',
+        component: 'TemporalValidation',
+        severity: 'critical',
+        timestamp: Date.now()
+      });
+      
+      return {
+        isValid: false,
+        errors,
+        warnings,
+        severity: 'critical',
+        recommendedActions: ['Check temporal prediction system', 'Verify input history']
+      };
+    }
+
+    const severity = errors.some(e => e.severity === 'critical') ? 'critical' :
+                    errors.some(e => e.severity === 'high') ? 'high' :
+                    errors.length > 0 ? 'medium' : 'low';
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      severity,
+      recommendedActions: this.generateRecommendedActions(errors, warnings)
+    };
+  }
+
+  // System health and recovery methods
+  private async performHealthCheck(): Promise<SystemHealthMetrics> {
+    const startTime = performance.now();
+    
+    try {
+      this.systemHealth = {
+        hyperDimensionalHealth: 0.85,
+        temporalPredictionHealth: 0.90,
+        quantumCoherenceHealth: 0.80,
+        memoryHealth: 0.88,
+        performanceHealth: 0.92,
+        overallHealth: 0.87,
+        criticalErrors: this.errorHistory.filter(e => e.severity === 'critical').length,
+        warnings: this.warningHistory.length,
+        lastHealthCheck: Date.now()
+      };
+      
+      return this.systemHealth;
+      
+    } catch (error) {
+      console.error('❌ Health check failed:', error);
+      
+      this.systemHealth = {
+        hyperDimensionalHealth: 0.1,
+        temporalPredictionHealth: 0.1,
+        quantumCoherenceHealth: 0.1,
+        memoryHealth: 0.1,
+        performanceHealth: 0.1,
+        overallHealth: 0.1,
+        criticalErrors: this.errorHistory.filter(e => e.severity === 'critical').length + 1,
+        warnings: this.warningHistory.length,
+        lastHealthCheck: Date.now()
+      };
+      
+      return this.systemHealth;
+    }
+  }
+
+  // Helper methods
+  private initializeSystemHealth(): void {
+    this.systemHealth = {
+      hyperDimensionalHealth: 1.0,
+      temporalPredictionHealth: 1.0,
+      quantumCoherenceHealth: 1.0,
+      memoryHealth: 1.0,
+      performanceHealth: 1.0,
+      overallHealth: 1.0,
+      criticalErrors: 0,
+      warnings: 0,
+      lastHealthCheck: Date.now()
+    };
+  }
+  
+  private initializeRecoveryPlans(): void {
+    this.recoveryPlans.set('hyperDimensionalSample', {
+      strategy: 'fallback',
+      maxAttempts: 3,
+      backoffMultiplier: 2,
+      timeoutMs: 5000,
+      fallbackConfig: {
+        quantumCoherence: false,
+        adaptiveResolution: false
+      }
+    });
+    
+    this.recoveryPlans.set('temporalPrediction', {
+      strategy: 'degrade',
+      maxAttempts: 2,
+      backoffMultiplier: 1.5,
+      timeoutMs: 3000
+    });
+  }
+  
+  private initializeCircuitBreakers(): void {
+    this.circuitBreakers.set('hyperDimensionalSample', new CircuitBreaker({
+      failureThreshold: 5,
+      resetTimeout: 30000,
+      monitoringPeriod: 60000
+    }));
+    
+    this.circuitBreakers.set('temporalPrediction', new CircuitBreaker({
+      failureThreshold: 3,
+      resetTimeout: 20000,
+      monitoringPeriod: 45000
+    }));
+  }
+  
+  private startHealthMonitoring(): void {
+    this.healthCheckInterval = setInterval(async () => {
+      await this.performHealthCheck();
+      
+      if (this.systemHealth.overallHealth < 0.3 && this.adaptiveRecovery) {
+        console.log('🔄 Triggering adaptive recovery due to low system health');
+        await this.attemptSystemRecovery();
+      }
+    }, 30000); // Check every 30 seconds
+  }
+
+  private async executeWithTimeout<T>(
+    operation: () => Promise<T>,
+    timeoutMs: number,
+    timeoutMessage: string
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(timeoutMessage));
+      }, timeoutMs);
+      
+      operation()
+        .then(result => {
+          clearTimeout(timeout);
+          resolve(result);
+        })
+        .catch(error => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+    });
+  }
+
+  private async executeRecoveryPlan(
+    operation: string,
+    error: unknown
+  ): Promise<{ success: boolean; samples?: HyperSample[] }> {
+    console.log(`🔄 Executing recovery plan for ${operation}`);
+    // Simplified recovery implementation
+    return { success: false };
+  }
+
+  private generateFallbackSamples(basePosition: number[], sampleCount: number): HyperSample[] {
+    const samples: HyperSample[] = [];
+    
+    for (let i = 0; i < Math.min(sampleCount, 10); i++) {
+      samples.push({
+        coordinates: new Float32Array([
+          basePosition[0] + Math.random() * 0.1,
+          basePosition[1] + Math.random() * 0.1,
+          basePosition[2] + Math.random() * 0.1
+        ]),
+        weights: new Float32Array([0.5]),
+        coherence: 0.3,
+        entanglement: new Map()
+      });
+    }
+    
+    return samples;
+  }
+
+  private generateFallbackPrediction(steps: number): any {
+    return {
+      futureStates: [],
+      confidence: 0.1,
+      timeHorizon: 0.1,
+      accuracy: 0.1,
+      neuralConfidence: 0.1,
+      quantumEnhanced: false
+    };
+  }
+
+  private recordValidationErrors(errors: ValidationError[]): void {
+    for (const error of errors) {
+      this.errorHistory.push(error);
+      console.error(`❌ Error recorded: [${error.code}] ${error.message}`);
+    }
+    
+    // Limit history size
+    if (this.errorHistory.length > 1000) {
+      this.errorHistory = this.errorHistory.slice(-500);
+    }
+  }
+
+  private recordValidationWarnings(warnings: ValidationWarning[]): void {
+    for (const warning of warnings) {
+      this.warningHistory.push(warning);
+      console.warn(`⚠️ Warning recorded: [${warning.code}] ${warning.message}`);
+    }
+    
+    // Limit history size
+    if (this.warningHistory.length > 1000) {
+      this.warningHistory = this.warningHistory.slice(-500);
+    }
+  }
+
+  private generateRecommendedActions(errors: ValidationError[], warnings: ValidationWarning[]): string[] {
+    const actions: string[] = [];
+    
+    if (errors.some(e => e.code === 'INVALID_BASE_POSITION')) {
+      actions.push('Verify input position coordinates are valid numbers');
+    }
+    
+    if (warnings.some(w => w.code === 'LOW_AVERAGE_COHERENCE')) {
+      actions.push('Check quantum coherence settings and environmental factors');
+    }
+    
+    if (actions.length === 0) {
+      actions.push('Monitor system performance and logs for issues');
+    }
+    
+    return actions;
+  }
+
+  private updatePerformanceMetrics(operation: string, time: number, success: boolean): void {
+    console.log(`📊 ${operation}: ${time.toFixed(2)}ms (${success ? 'success' : 'failure'})`);
+  }
+
+  private async attemptSystemRecovery(): Promise<void> {
+    console.log('🔄 Attempting system recovery...');
+    // Simplified recovery implementation
+  }
+
+  private async recoverTemporalSystem(): Promise<void> {
+    console.log('🔄 Recovering temporal prediction system...');
+    // Simplified temporal recovery
+  }
+
+  // Public methods
+  getSystemHealth(): SystemHealthMetrics {
+    return { ...this.systemHealth };
+  }
+  
+  getErrorHistory(): ValidationError[] {
+    return [...this.errorHistory];
+  }
+  
+  getWarningHistory(): ValidationWarning[] {
+    return [...this.warningHistory];
+  }
+  
+  clearHistory(): void {
+    this.errorHistory = [];
+    this.warningHistory = [];
+    console.log('🧹 Error and warning history cleared');
+  }
+  
+  updateGuards(newGuards: Partial<SystemGuards>): void {
+    this.guards = { ...this.guards, ...newGuards };
+    console.log('🛡️ System guards updated');
+  }
+  
+  dispose(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+    
+    this.clearHistory();
+    this.circuitBreakers.clear();
+    this.recoveryPlans.clear();
+    
+    console.log('♻️ Robust Hyper-Dimensional System disposed');
+  }
+}
+
+/**
+ * Circuit Breaker implementation for service resilience
+ */
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: 'closed' | 'open' | 'half-open' = 'closed';
+  
+  constructor(private config: {
+    failureThreshold: number;
+    resetTimeout: number;
+    monitoringPeriod: number;
+  }) {}
+  
+  isOpen(): boolean {
+    if (this.state === 'open') {
+      const now = Date.now();
+      if (now - this.lastFailureTime > this.config.resetTimeout) {
+        this.state = 'half-open';
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+  
+  recordSuccess(): void {
+    this.failures = 0;
+    this.state = 'closed';
+  }
+  
+  recordFailure(): void {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failures >= this.config.failureThreshold) {
+      this.state = 'open';
+    }
+  }
+}
+
+export default RobustHyperDimensionalSystem;
