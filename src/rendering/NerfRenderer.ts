@@ -154,16 +154,14 @@ export class NerfRenderer {
     let renderSuccessful = false;
     
     try {
-    
-    // Update adaptive quality based on performance
-    if (this.adaptiveQualityEnabled) {
-      this.updateAdaptiveQuality();
-    }
-    
-    // Begin frame
-    this.backend.beginFrame();
-    
-    try {
+      // Update adaptive quality based on performance
+      if (this.adaptiveQualityEnabled) {
+        this.updateAdaptiveQuality();
+      }
+      
+      // Begin frame
+      this.backend.beginFrame();
+      
       // Update uniforms
       const uniforms = this.prepareUniforms(options);
       this.backend.updateUniforms('nerf-main', uniforms);
