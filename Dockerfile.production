@@ -2,7 +2,7 @@
 # Multi-stage build with GPU acceleration support and security hardening
 
 # Stage 1: Build environment with native compilation support
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Install system dependencies for native modules and GPU drivers
 RUN apk add --no-cache \
@@ -42,7 +42,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 2: Production runtime with GPU acceleration
-FROM node:24-alpine AS production
+FROM node:25-alpine AS production
 
 # Install runtime dependencies for GPU acceleration and spatial computing
 RUN apk add --no-cache \
